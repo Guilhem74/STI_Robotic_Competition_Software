@@ -3,6 +3,9 @@ import serial
 SERIAL_PORT = '/dev/ttyS0'
 
 SERIAL_RATE = 115200
+xs = []
+ys = []
+   
 
 def parse(raw_message):
     receivedCom = {}
