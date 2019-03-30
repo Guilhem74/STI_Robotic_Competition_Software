@@ -2,7 +2,7 @@ String buf;
 
 void setup() {
 Serial.begin(115200);
-delay(5000);
+delay(500);
 
 
 
@@ -20,7 +20,18 @@ for(int i = 50 ; i < 3000; i++){
     buf += String(i);
     buf +=F(" "); 
     //buf += F("Y");
-    buf += String(i); 
+    buf += String(i);
+     buf +=F(" "); 
+     buf += String(i);
+    buf +=F(" "); 
+   
+    buf += String(i*2);
+    buf +=F(" "); 
+     buf += String(i);
+    buf +=F(" "); 
+   
+    buf += String(i*4);
+     
     buf += F("\n"); 
     Serial.println(buf);
     buf = "";
