@@ -15,27 +15,28 @@ void loop() {
 
 for(int i = 50 ; i < 3000; i++){
  
-    
-    //buf += F("X");
+    buf += F("O");
+    buf += F(" ");
+    buf += F("X");
     buf += String(i);
     buf +=F(" "); 
-    //buf += F("Y");
+    buf += F("Y0");
     buf += String(i);
+     
      buf +=F(" "); 
-     buf += String(i);
-    buf +=F(" "); 
+    buf += F("Y1");
    
     buf += String(i*2);
     buf +=F(" "); 
-     buf += String(i);
-    buf +=F(" "); 
+    buf += F("Y2");
+     
    
     buf += String(i*4);
      
     buf += F("\n"); 
     Serial.println(buf);
     buf = "";
-    delay(50);
+    delay(20);
   /*
   Serial.print(String(i));
   Serial.print(" ");

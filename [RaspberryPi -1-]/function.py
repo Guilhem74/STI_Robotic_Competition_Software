@@ -114,19 +114,19 @@ class AnalogPlot:
 
   # add data
   def add(self, data):
-      assert(len(data) == self.nb_curve*2)
+      assert(len(data) == self.nb_curve+1)
       if(self.nb_curve == 1):
         self.addToBuf(self.ax, data[0])
         self.addToBuf(self.ay, data[1])
       elif(self.nb_curve == 2):
         self.addToBuf(self.ax, data[0])
         self.addToBuf(self.ay, data[1])
-        self.addToBuf(self.ay1, data[3])
+        self.addToBuf(self.ay1, data[2])
       else:
         self.addToBuf(self.ax, data[0])
         self.addToBuf(self.ay, data[1])
-        self.addToBuf(self.ay1, data[3])
-        self.addToBuf(self.ay2, data[5])
+        self.addToBuf(self.ay1, data[2])
+        self.addToBuf(self.ay2, data[3])
 
 
   # update plot
@@ -135,38 +135,52 @@ class AnalogPlot:
           
           line = self.ser.readline().decode('utf-8')
           
-          line = line.replace('\x00','')
+          line = line.replace('0xc2','')
+          line = line.replace('O ','')
+          line = line.replace('Y0','')
+          line = line.replace('X','')
+          line = line.replace('Y1','')
+          line = line.replace('Y2','')
 
           
+          
           data = [float(val) for val in line.split()]
-          data = data[0:self.nb_curve*2]
-          if(len(data) == self.nb_curve*2):
+          data = data[0:self.nb_curve+1]
+          
+          if(len(data) == self.nb_curve+1):
             self.add(data[0:2*self.nb_curve])
             if(self.nb_curve == 1):
+
               xs.append(line.split()[0])
               ys.append(line.split()[1])
               
               a0.set_data(range(self.maxLen), self.ax)
+
               a1.set_data(range(self.maxLen), self.ay)
+
             elif(self.nb_curve == 2):
               xs.append(line.split()[0])
               ys.append(line.split()[1])
+              ys1.append(line.split()[2])
+
               a0.set_data(range(self.maxLen), self.ax)
+
               a1.set_data(range(self.maxLen), self.ay)
-              xs1.append(line.split()[2])
-              ys1.append(line.split()[3])
+              
               a2.set_data(range(self.maxLen), self.ay1)
 
             else:
               xs.append(line.split()[0])
               ys.append(line.split()[1])
+              ys1.append(line.split()[2])
+              ys2.append(line.split()[3])
+
               a0.set_data(range(self.maxLen), self.ax)
+
               a1.set_data(range(self.maxLen), self.ay)
-              xs1.append(line.split()[2])
-              ys1.append(line.split()[3])
+              
               a2.set_data(range(self.maxLen), self.ay1)
-              xs2.append(line.split()[4])
-              ys2.append(line.split()[5])
+              
               a3.set_data(range(self.maxLen), self.ay2)
             
           
@@ -184,7 +198,7 @@ class AnalogPlot:
 
 def graph(ser,nb_curves,case):
   
-  analogPlot = AnalogPlot(ser, 100,nb_curves)
+  analogPlot = AnalogPlot(ser, 1000,nb_curves)
 
 	# set up animation
   fig = plt.figure()
@@ -257,6 +271,14 @@ def main():
         print("G[0-1] : X[Position] Y[Position] F[Speed] T[Timeout] ")
         print("M[0-9] : H[Motor] P[PWM] S[Sensor] Q[SensitivitySensor]")
         print("O[1-3](nb_curves to display) : H[Motor] F[Speed] S[Sensor]")
+        print("S, Display one Serial input")
+      if(message_out[0] == "S"):
+        
+          while(ser.in_waiting > 0 ):
+            reading = ser.readline().decode('utf-8')
+            
+            print(reading)
+        
 
       if(message_out[0] == "Q" or message_out[0] == "q" ):
         break
