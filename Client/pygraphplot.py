@@ -148,6 +148,8 @@ d2.addWidget(label2)
 
 def updateCurves():
     global action_In
+    len_max = 25
+
     try:
         dic = action_In.popleft()
         x = dic['X']
@@ -155,8 +157,20 @@ def updateCurves():
         a = dic['A']
     except:
         pass
-    data0.append(y)
-    data.append(a)    
+
+    if(len(data0) > len_max):
+        data0.pop(0)
+        data0.append(y)
+    else:
+        data0.append(y)
+
+    if(len(data) > len_max):
+        data.pop(0)
+        data.append(a)
+    else:
+        data.append(0) 
+    
+       
     return data, np.arange(0, len(data)) ,data0 , np.arange(0, len(data0))
     
 
@@ -203,7 +217,8 @@ if __name__ == '__main__':
     c = client()   
     p = Parser_client()
     threading.Thread(target=c.run, args=(buf_IN,buf_OUT,connected)).start()
-    threading.Thread(target=p.run, args=(buf_IN,buf_OUT,action_In,action_Out)).start() 
+    threading.Thread(target=p.run, args=(buf_IN,buf_OUT,action_In,action_Out)).start()
+
     if (sys.flags.interactive != 1) or not hasattr(QtCore, 'PYQT_VERSION'):
         QtGui.QApplication.instance().exec_()
         
