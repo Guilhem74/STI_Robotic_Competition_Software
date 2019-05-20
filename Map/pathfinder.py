@@ -14,9 +14,15 @@ from case import *
 
 class pathfinder:
 
-  def heuristic(self, a, b):
+  def heuristic(self,start, neighbor, current, goal):
+    """dx1 = current[0] - goal[0]
+    dy1 = current[1] - goal[1]
+    dx2 = start[0] - goal[0]
+    dy2 = start[1] - goal[1]
+    cross = abs(dx1*dy2 - dx2*dy1)
+    return cross"""
     #return (b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2
-    return abs(b[0] - a[0]) + abs(b[1] - a[1])
+    return abs(neighbor[0] - current[0]) + abs(neighbor[1] - current[1])
   def astar(self, array,  goal,start):
 
     neighbors = [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]
@@ -24,7 +30,7 @@ class pathfinder:
     close_set = set()
     came_from = {}
     gscore = {start:0}
-    fscore = {start:self.heuristic(start, goal)}
+    fscore = {start:self.heuristic(start, goal, start, goal)}
     oheap = []
 
     heappush(oheap, (fscore[start], start))
@@ -43,7 +49,7 @@ class pathfinder:
         close_set.add(current)
         for i, j in neighbors:
             neighbor = current[0] + i, current[1] + j            
-            tentative_g_score = gscore[current] + self.heuristic(current, neighbor)
+            tentative_g_score = gscore[current] + self.heuristic(start, neighbor, current, goal)
             if 0 <= neighbor[0] < array.shape[0]:
                 if 0 <= neighbor[1] < array.shape[1]:                
                     if array[neighbor[0]][neighbor[1]].status == "wall" or array[neighbor[0]][neighbor[1]].status == "obstacle" or array[neighbor[0]][neighbor[1]].zone == 3 :
@@ -61,7 +67,7 @@ class pathfinder:
             if  tentative_g_score < gscore.get(neighbor, 0) or neighbor not in [i[1]for i in oheap]:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g_score
-                fscore[neighbor] = tentative_g_score + self.heuristic(neighbor, goal)
+                fscore[neighbor] = tentative_g_score + self.heuristic(start, neighbor, current, goal)
                 heappush(oheap, (fscore[neighbor], neighbor))
                 
     return False

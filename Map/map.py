@@ -12,7 +12,7 @@ from map import *
 from robot import *
 from pathfinder import *
 from case import *
-
+from map_items import *
 
 
 
@@ -25,6 +25,7 @@ class Map:
     self.size_robot = 1 * self.resolution
     self.H = 16*self.resolution
     self.W = 16*self.resolution
+    self.walls = []
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.map = np.zeros((self.H,self.W), dtype=int)
     self.grid = np.empty((self.H+20,self.W+20), dtype=object)
@@ -33,23 +34,30 @@ class Map:
 
 
   def build_map(self):
+    
     self.grid[:] = case(zone = 1 , status = "unexplored" )
     for i in range(self.H):
       for j in range(self.W):
         
         self.grid[i,j] = case(self.def_zone(i,j) , status = "unexplored" )
         if(i==0 or i==self.H-1 or j ==0 or j ==self.W-1):
-          self.grid[i,j] = case(self.def_zone(i,j)  , status = "wall" )
+          self.walls.append( wall(i,j,self,self.grid) )
+          #self.grid[i,j] = case(self.def_zone(i,j)  , status = "wall" )
+
 
     for i in range(6*self.resolution):
-      self.grid[i,10*self.resolution] = case(self.def_zone(i,j)  , status = "wall" )
+      #self.grid[i,10*self.resolution] = case(self.def_zone(i,j)  , status = "wall" )
+      self.walls.append(wall(i,10*self.resolution,self,self.grid))
+
     for i in range(5*self.resolution):
-      self.grid[6*self.resolution,10*self.resolution+i] = case(self.def_zone(i,j)  , status = "wall" )
+      #self.grid[6*self.resolution,10*self.resolution+i] = case(self.def_zone(i,j)  , status = "wall" )
+      self.walls.append( wall(6*self.resolution,10*self.resolution+i,self,self.grid))
     for i in range(2*self.resolution):
-      self.grid[4*self.resolution+1+i,15*self.resolution] = case(self.def_zone(i,j)  , status = "wall" )
-     
+      #self.grid[4*self.resolution+1+i,15*self.resolution] = case(self.def_zone(i,j)  , status = "wall" )
+      self.walls.append( wall(4*self.resolution+1+i,15*self.resolution,self,self.grid) )
 
-
+    for i in self.walls:
+      self.grid = i.update(self,self.grid)
 
   def def_zone(self,i,j):
     zone = 1 
@@ -76,43 +84,7 @@ class Map:
     img.show()
   
   def update_robot(self,robot):
-    theta = robot.angle
-    cx = robot.x
-    cy = robot.y
-    #Front left corner of robot
-    x0 = cx - robot.size_front 
-    y0 = cy - robot.size_side 
-    #Front right corner of robot
-    x1 = cx - robot.size_front 
-    y1 = cy + robot.size_side 
-    #back left corner of robot
-    x2 = cx + robot.size_back 
-    y2 = cy - robot.size_side 
-    #Back right corner of robot
-    x3 = cx + robot.size_back
-    y3 = cy + robot.size_side
-    corner = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
-    ir_sensors = []
-    for sensor in robot.ir_sensors:
-      ir_sensors.append([robot.ir_sensors[sensor][0]+cx,robot.ir_sensors[sensor][1]+cy])
-
-    
-
-    for i in corner:
-      x = i[0]
-      y = i[1]
-      
-      i[0] , i[1] = self.rotation(x,y,cx,cy,theta)
-      
-      self.grid[i[0],i[1]] = case(self.def_zone(i[0],i[1]) , status = "robot" )
-    for i in ir_sensors:
-      x = i[0]
-      y = i[1]
-      
-      i[0] , i[1] = self.rotation(x,y,cx,cy,theta)
-      
-      
-      self.grid[i[0],i[1]] = case(self.def_zone(i[0],i[1]) , status = "robot" , color=[255,0,0])
+    self.grid = robot.display(self.grid,self)
     
 
 
@@ -122,7 +94,8 @@ class Map:
   def update_map(self,robot,path,XY):
 
     self.build_map()
-
+    for i in self.walls:
+      self.grid = i.update(self,self.grid)
         #Make condition for explored area !
     self.update_robot(robot)
     self.image_path(path,XY,robot)
@@ -183,7 +156,7 @@ class Map:
     
 
     
-    xi,yi = self.rotation(xi,yi, robot.ir_sensors[sensor][0], robot.ir_sensors[sensor][1] ,a )
+    #xi,yi = self.rotation(xi,yi, robot.ir_sensors[sensor][0], robot.ir_sensors[sensor][1] ,a )
 
     if(type_ == "bottle"):
       self.bottle.append([xi,yi])
@@ -192,18 +165,7 @@ class Map:
 
 
     
-  def rotation(self,x,y,cx,cy,theta):
-      tempX = x - cx
-      tempY = y - cy
-
-      #now apply rotation
-      rotatedX = tempX*math.cos(theta) - tempY*math.sin(theta)
-      rotatedY = tempX*math.sin(theta) + tempY*math.cos(theta)
-
-      #translate back
-      new_x = round(rotatedX + cx)
-      new_y = round(rotatedY + cy)
-      return new_x,new_y
+  
         
 
 

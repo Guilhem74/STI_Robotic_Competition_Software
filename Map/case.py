@@ -14,6 +14,7 @@ class case:
     self.status = status
     self.color = color
     self.update_col()
+    
   def set_status(self,status):
     self.status = status
     self.update_col()

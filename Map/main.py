@@ -12,7 +12,7 @@ from map import *
 from robot import *
 from pathfinder import *
 from case import *
-
+from beacon import *
 
 
 
@@ -20,7 +20,7 @@ if __name__ == '__main__':
   np.set_printoptions(threshold=np.inf)
   mapping = Map()
   pf = pathfinder()
-  robot = robot(140,10,math.pi/4)
+  robot = robot(140,20,math.pi/4)
   path = pf.astar(mapping.grid,(30,145),(robot.x,robot.y))
   
   XY = pf.find_vertice(path)
@@ -33,6 +33,20 @@ if __name__ == '__main__':
     mapping.new_item('bottle',  robot, "B")
     mapping.map_item()
     mapping.display()
+    
+    """
+    newX ,newY ,NewA = robot.get_position()
+    print(newX ,newY ,NewA)
+
+    robot.set_position(newX ,newY ,NewA)
+    path = pf.astar(mapping.grid,(30,145),(robot.x,robot.y))
+  
+    XY = pf.find_vertice(path)
+    mapping.update_map(robot,path,XY)
+    mapping.map_item()
+    mapping.display()
+    """
+    
 
 
     

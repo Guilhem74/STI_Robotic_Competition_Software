@@ -5,9 +5,12 @@ from heapq import *
 import math
 import threading
 from collections import deque
+from map import *
+from robot import *
+from pathfinder import *
+from case import *
 from sensor import *
-
-
+from beacon import *
 
 class robot:
   def __init__(self,x,y,a):
@@ -31,9 +34,9 @@ class robot:
                        'K':[-(2/3)*self.size_front  , self.size_side  , 0],
                        'L':[-self.size_front  , 0  , 0],
                        'M':[-self.size_front  , 0  , 0],} #Sensor position
-    for sensor in self.ir_sensors:
-      self.sensor_List.append((self,sensor,self.ir_sensors[sensor][0],self.ir_sensors[sensor][1],self.ir_sensors[sensor][2]))
-
+    for s in self.ir_sensors:
+      self.sensor_List.append(sensor(s,self.ir_sensors[s][0],self.ir_sensors[s][1],self.ir_sensors[s][2]))
+    
 
 
 
@@ -42,41 +45,60 @@ class robot:
     self.x = x
     self.y = y
     self.a = a
+
     
 
   def get_position(self):
-    return [self.x, self.y, self.a]
-    
-  def display(self,grid):
-    theta = robot.angle
-    cx = robot.x
-    cy = robot.y
-    #Front left corner of robot
-    x0 = cx - robot.size_front 
-    y0 = cy - robot.size_side 
-    #Front right corner of robot
-    x1 = cx - robot.size_front 
-    y1 = cy + robot.size_side 
-    #back left corner of robot
-    x2 = cx + robot.size_back 
-    y2 = cy - robot.size_side 
-    #Back right corner of robot
-    x3 = cx + robot.size_front
-    y3 = cy + robot.size_side
-
-    corner = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
-
-    for i in corner:
-      x = i[0]
-      y = i[1]
-
+    return beacon_main()
+  
+  def rotation(self,x,y,cx,cy,theta):
       tempX = x - cx
       tempY = y - cy
 
       #now apply rotation
-      rotatedX = tempX*cos(theta) - tempY*sin(theta)
-      rotatedY = tempX*sin(theta) + tempY*cos(theta)
+      rotatedX = tempX*math.cos(theta) - tempY*math.sin(theta)
+      rotatedY = tempX*math.sin(theta) + tempY*math.cos(theta)
 
       #translate back
-      i[0] = rotatedX + cx
-      i[1] = rotatedY + cy
+      new_x = round(rotatedX + cx)
+      new_y = round(rotatedY + cy)
+      return new_x,new_y
+
+  def display(self,grid,map):
+    theta = self.angle
+    cx = self.x
+    cy = self.y
+    #Front left corner of robot
+    x0 = cx - self.size_front 
+    y0 = cy - self.size_side 
+    #Front right corner of robot
+    x1 = cx - self.size_front 
+    y1 = cy + self.size_side 
+    #back left corner of robot
+    x2 = cx + self.size_back 
+    y2 = cy - self.size_side 
+    #Back right corner of robot
+    x3 = cx + self.size_back
+    y3 = cy + self.size_side
+    corner = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
+    
+    new_point = []
+
+    
+    #Update corner robot
+    for i in corner:
+      x = i[0]
+      y = i[1]
+      x,y = self.rotation(x,y,cx,cy,theta)
+      
+      grid[x,y] = case(map.def_zone(i[0],i[1]) , status = "robot" )
+    #Update sensor position
+    for s in self.sensor_List:
+      s.set_position(self)
+    for i in self.sensor_List:
+      i.set_position(self)
+      i.display(grid,map)
+
+
+
+    return grid
