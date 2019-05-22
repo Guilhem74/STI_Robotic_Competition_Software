@@ -22,37 +22,29 @@ class Map:
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.ones((self.H,self.W), dtype=int)
     self.grid_reward = np.ones((self.H,self.W), dtype=int)
-    #self.build_map()
+    self.build_map(2)
 
 
 
-  def build_map(self):
-    
-    
-    for i in range(self.H):
-      for j in range(self.W):
-        self.grid[j,i] = 99
+  def build_map(self,num):
+    self.grid[[0,-1],:] = 255
+    self.grid[:, [0,-1]] = 255
+    zone = np.ones((6*self.resolution,6*self.resolution))*255
+    if(num == 0):
+        self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
+        self.grid[:6*self.resolution,800-6*self.resolution:800] = zone
+        self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
+    if(num == 1):
+        self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
+        self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
+    if(num == 2):
+        self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
+        self.grid[800-6*self.resolution:800,799-6*self.resolution:801-6*self.resolution] = np.ones((6*self.resolution,2))*255
+        self.grid[799-6*self.resolution:801-6*self.resolution,800-6*self.resolution:800-self.resolution] = np.ones((2,5*self.resolution))*255
+        self.grid[800-6*self.resolution:800-4*self.resolution,799-self.resolution:801-self.resolution] = np.ones((2*self.resolution,2))*255
+
 
         
-        
-        if(i==0 or i==self.H-1 or j ==0 or j ==self.W-1):
-          
-          self.grid[j,i] = 99
-
-
-    for i in range(6*self.resolution):
-      self.grid[10*self.resolution,i] =  255
-      
-
-    for i in range(5*self.resolution):
-      self.grid[10*self.resolution+i,6*self.resolution] = 255
-      
-    for i in range(2*self.resolution):
-      self.grid[15*self.resolution,4*self.resolution+1+i] = 255
-      
-
-
-
   
 
 
@@ -72,6 +64,7 @@ class Map:
     
     plt.figure(figsize=(20,20))
     plt.imshow(A/np.max(A),origin='lower')
+    
     #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     
   def Get_Display_Pos_Robot(self,robot):
