@@ -19,10 +19,12 @@ class Map:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
+    self.obstacle_size = 10 + 13
+    self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.ones((self.H,self.W), dtype=int)
     self.grid_reward = np.ones((self.H,self.W), dtype=int)
-    self.build_map(2)
+    self.build_map(0)
 
 
 
@@ -42,7 +44,7 @@ class Map:
         self.grid[800-6*self.resolution:800,799-6*self.resolution:801-6*self.resolution] = np.ones((6*self.resolution,2))*255
         self.grid[799-6*self.resolution:801-6*self.resolution,800-6*self.resolution:800-self.resolution] = np.ones((2,5*self.resolution))*255
         self.grid[800-6*self.resolution:800-4*self.resolution,799-self.resolution:801-self.resolution] = np.ones((2*self.resolution,2))*255
-
+    
 
         
   
@@ -58,7 +60,7 @@ class Map:
     for coord in path:
       A[coord[1],coord[0],1] = 255
     Robot_Array=self.Get_Display_Pos_Robot(robot)
-    # A = robot.display(A)
+
     A[:,:,2]=Robot_Array
     
     
@@ -92,43 +94,43 @@ class Map:
   
 
   
-  def map_item(self):
-    
-    size = {"bottle": 1 , "obstacle" : 10+13}
-    
-    for bottle in self.bottle:
-      for i in range(bottle[0] - size["bottle"] ,bottle[0] + size["bottle"] ):
-        for j in range(bottle[1] - size["bottle"] ,bottle[1] + size["bottle"] ):
-
-          self.grid_reward[bottle[0],bottle[1]] = -100
-    
-    for obstacle in self.obstacle:
-      for i in range(max(0,obstacle[0] - size["obstacle"]) ,min(self.H,obstacle[0] + size["obstacle"] )):
-        for j in range(max(0,obstacle[1] - size["obstacle"])  ,min(self.W,obstacle[1] + size["obstacle"])  ):
-          self.grid[j,i] = 255
-    self.grid = gaussian_filter(self.grid, sigma=7)
-    
-    
-
-
-
-  def new_item(self, type_, robot, sensor ): #sensor 0 to 13 
-    
-    x = robot.x
-    y = robot.y
-    a = robot.angle
 
     
-    xi = robot.ir_sensors[sensor][0] + x
-    yi = robot.ir_sensors[sensor][1] + y
-   
     
-    if(type_ == "bottle"):
-      self.bottle.append([xi,yi])
-    else:
-     
-      self.obstacle.append([xi,yi])
-    self.map_item()
+  def new_bottle(self, robot, sensor):
+        x = robot.x
+        y = robot.y
+        a = robot.angle
+        xi = robot.ir_sensors[sensor][0] + x
+        yi = robot.ir_sensors[sensor][1] + y 
+        self.bottle.append([xi,yi])
+
+        for bottle in self.bottle:
+            for i in range(bottle[0] - self.bottle_size ,bottle[0] + self.bottle_size ):
+                for j in range(bottle[1] - self.bottle_size ,bottle[1] + self.bottle_size ):
+                    self.grid_reward[bottle[0],bottle[1]] = -100
+        #self.grid = gaussian_filter(self.grid, sigma=7)   
+
+
+
+  def new_obstacle(self, robot, sensor ): #sensor 0 to 13 
+    
+        x = robot.x
+        y = robot.y
+        a = robot.angle
+
+
+        xi = robot.ir_sensors[sensor][0] + x
+        yi = robot.ir_sensors[sensor][1] + y
+
+
+        self.obstacle.append([xi,yi])
+
+        for obstacle in self.obstacle:
+          for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
+            for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):
+              self.grid[j,i] = 255
+        self.grid = gaussian_filter(self.grid, sigma=7)
 
 
 
