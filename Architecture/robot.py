@@ -1,7 +1,6 @@
 
 import numpy as np
 import math
-from robot import *
 
 class robot:
   def __init__(self,x,y,a):
