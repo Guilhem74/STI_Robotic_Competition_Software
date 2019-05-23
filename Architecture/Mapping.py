@@ -5,7 +5,6 @@
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-from scipy.ndimage.filters import gaussian_filter
 
 
 
@@ -19,7 +18,7 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-    self.obstacle_size = 10 + 13
+    self.obstacle_size = 10 + 13 +3
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.ones((self.H,self.W), dtype=int)
@@ -54,20 +53,20 @@ class Mapping:
   def display(self,G,path,robot):
     A = np.zeros((self.H,self.W,3))    
     A[:,:,0] = self.grid[:,:]
-      
-    for coord in G:
-      A[coord[0],coord[1],1] = G[coord[0],coord[1]]
-    for coord in path:
-      A[coord[1],coord[0],1] = 255
+    if G!= None:
+        for coord in G:
+          A[coord[0],coord[1],1] = G[coord[0],coord[1]]
+    if path!= None:
+        for coord in path:
+          A[coord[1],coord[0],1] = 255
     Robot_Array=self.Get_Display_Pos_Robot(robot)
 
     A[:,:,2]=Robot_Array
-    A[:,:,0]=A[:,:,0]/np.max(A[:,:,0])
-    A[:,:,1]=A[:,:,1]/np.max(A[:,:,1])
-    A[:,:,2]=A[:,:,2]/np.max(A[:,:,2])
+    A[:,:,0]=A[:,:,0]/max(1,np.max(A[:,:,0]))
+    A[:,:,1]=A[:,:,1]/max(1,np.max(A[:,:,1]))
+    A[:,:,2]=A[:,:,2]/max(1,np.max(A[:,:,2]))
     plt.figure(figsize=(20,20))
     plt.imshow(A/np.max(A),origin='lower')
-    
     plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     return A
     
@@ -118,12 +117,11 @@ class Mapping:
   def new_obstacle(self, xy ): 
         for element in xy:
             self.obstacle.append(element)
-        print(self.obstacle)
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
             for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):
               self.grid[j,i] = 255
-        self.grid = gaussian_filter(self.grid, sigma=7)
+        #self.grid = gaussian_filter(self.grid, sigma=7)
         return self.grid
 
 
