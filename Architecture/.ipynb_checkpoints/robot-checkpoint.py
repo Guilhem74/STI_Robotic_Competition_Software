@@ -72,7 +72,9 @@ class robot:
       return new_x,new_y
    
   def sensor_state(self, state):
+      obstacle_position = []
       sensors_state = {'a':0,'b':0,'c':0,'d':0,'e':0,'f':0,'g':0,'h':0,'i':0,'j':0,'k':0,'l':0,'m':0}
+        
       mask = 1 
       for sensor in  sensors_state:
           if state&mask>0:
@@ -81,24 +83,40 @@ class robot:
           print(sensors_state)
       #Front 
       if sensors_state['k'] +sensors_state['m']  + sensors_state['l'] >0:
-            mapper.new_obstacle(  robot, "FRONT")
+            
+            xi = robot.ir_sensors["FRONT"][0] + self.x
+            yi = robot.ir_sensors["FRONT"][1] + self.y
+            obstacle_position.apppend([xi,yi])
       #BACK
       if sensors_state['a'] +sensors_state['b']  + sensors_state['c'] +sensors_state['b']  >0:
-            mapper.new_obstacle(  robot, "BACK")
+            xi = robot.ir_sensors["BACK"][0] + self.x
+            yi = robot.ir_sensors["BACK"][1] + self.y
+            obstacle_position.apppend([xi,yi])
       #LEFT
       if sensors_state['h'] +sensors_state['j']  + sensors_state['g']    >0:
-            mapper.new_obstacle(  robot, "LEFT")
+            xi = robot.ir_sensors["LEFT"][0] + self.x
+            yi = robot.ir_sensors["LEFT"][1] + self.y
+            obstacle_position.apppend([xi,yi])
       #RIGHT
       if sensors_state['e'] +sensors_state['i']  + sensors_state['f']    >0:
-            mapper.new_obstacle(  robot, "RIGHT")
+            xi = robot.ir_sensors["RIGHT"][0] + self.x
+            yi = robot.ir_sensors["RIGHT"][1] + self.y
+            obstacle_position.apppend([xi,yi])
       #FRONT LEFT
       if sensors_state['g'] + sensors_state['k'] == 2:
-            mapper.new_obstacle(  robot, "FRONTLEFT")
+            xi = robot.ir_sensors["FRONTLEFT"][0] + self.x
+            yi = robot.ir_sensors["FRONTLEFT"][1] + self.y
+            obstacle_position.apppend([xi,yi])
       #FRONT RIGH
       if sensors_state['e'] + sensors_state['l'] == 2:
-            mapper.new_obstacle(  robot, "FRONTRIGHT")
+            xi = robot.ir_sensors["FRONTRIGHT"][0] + self.x
+            yi = robot.ir_sensors["FRONTRIGHT"][1] + self.y
+            obstacle_position.apppend([xi,yi])
         
-    
+        
+
+      return obstacle_position
+        
     
     
     

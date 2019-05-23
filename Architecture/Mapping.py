@@ -115,19 +115,10 @@ class Mapping:
 
 
 
-  def new_obstacle(self, robot, sensor ): #sensor 0 to 13 
-    
-        x = robot.x
-        y = robot.y
-        a = robot.angle
-
-
-        xi = robot.ir_sensors[sensor][0] + x
-        yi = robot.ir_sensors[sensor][1] + y
-
-
-        self.obstacle.append([xi,yi])
-
+  def new_obstacle(self, xy ): 
+        for i in xy:
+            self.obstacle.append([xi,yi])
+            
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
             for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):

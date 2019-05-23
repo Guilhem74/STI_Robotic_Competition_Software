@@ -10,7 +10,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 
 
-class Map:
+class Mapping:
   def __init__(self):
 
     self.resolution = 50
@@ -62,12 +62,14 @@ class Map:
     Robot_Array=self.Get_Display_Pos_Robot(robot)
 
     A[:,:,2]=Robot_Array
-    
-    
+    A[:,:,0]=A[:,:,0]/np.max(A[:,:,0])
+    A[:,:,1]=A[:,:,1]/np.max(A[:,:,1])
+    A[:,:,2]=A[:,:,2]/np.max(A[:,:,2])
     plt.figure(figsize=(20,20))
     plt.imshow(A/np.max(A),origin='lower')
     
-    #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
+    plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
+    return A
     
   def Get_Display_Pos_Robot(self,robot):
     A = np.zeros((self.H,self.W))
@@ -113,19 +115,10 @@ class Map:
 
 
 
-  def new_obstacle(self, robot, sensor ): #sensor 0 to 13 
-    
-        x = robot.x
-        y = robot.y
-        a = robot.angle
-
-
-        xi = robot.ir_sensors[sensor][0] + x
-        yi = robot.ir_sensors[sensor][1] + y
-
-
-        self.obstacle.append([xi,yi])
-
+  def new_obstacle(self, xy ): 
+        for i in xy:
+            self.obstacle.append([xi,yi])
+            
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
             for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):
