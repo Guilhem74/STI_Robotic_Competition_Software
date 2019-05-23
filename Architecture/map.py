@@ -67,7 +67,7 @@ class Map:
     plt.figure(figsize=(20,20))
     plt.imshow(A/np.max(A),origin='lower')
     
-    #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
+    plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     
   def Get_Display_Pos_Robot(self,robot):
     A = np.zeros((self.H,self.W))

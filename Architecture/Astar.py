@@ -154,8 +154,8 @@ def checkpoint_in_fov(robot,XY):
     v2_norm = math.sqrt(v2[0]*v2[0] + v2[1]*v2[1])
     
     theta = math.degrees(math.acos((v2[0]*v1[0]+v2[1]*v1[1]) / v2_norm))  #Angle between robot orientation and next checkpoint
-
-    while(theta > 80): #80 is the maximum angle to make sure the robot go forward to this objective
+    i = 0
+    while(theta > 80 and i < 3): #80 is the maximum angle to make sure the robot go forward to this objective
         x_robot_bis =  x_robot_bis - increment * math.cos(math.radians(theta_robot)) 
         y_robot_bis = y_robot_bis - increment* math.sin(math.radians(theta_robot))
         v2 = (next_checkpoint[0] - x_robot_bis , next_checkpoint[1] - y_robot_bis)
@@ -163,6 +163,12 @@ def checkpoint_in_fov(robot,XY):
         theta = math.degrees(math.acos((v2[0]*v1[0]+v2[1]*v1[1]) / v2_norm))
         print(x_robot_bis,y_robot_bis,theta)
      #Makes the robot go backward in straight line until he see the next checkpoint in it's field of view
+        i = i+1
+        if(i >= 3 ) :
+            print("backward")
+            R_pos= robot.get_position()
+            return  R_pos[0] ,R_pos[1],R_pos[2] 
+    
     return x_robot_bis, y_robot_bis,theta_robot
 
 
