@@ -141,8 +141,8 @@ def find_vertice(path):
     
     return np.array(XY)*10
 
-def checkpoint_corrector(robot,XY):
-    
+def checkpoint_in_fov(robot,XY):
+    increment = 150 #Step of the search
     R_pos= robot.get_position()
     x_robot_bis = R_pos[0] 
     y_robot_bis = R_pos[1] 
@@ -153,14 +153,38 @@ def checkpoint_corrector(robot,XY):
     v1_norm = math.sqrt(v1[0]*v1[0] + v1[1]*v1[1])
     v2_norm = math.sqrt(v2[0]*v2[0] + v2[1]*v2[1])
     
-    theta = math.degrees(math.acos((v2[0]*v1[0]+v2[1]*v1[1]) / v2_norm))
+    theta = math.degrees(math.acos((v2[0]*v1[0]+v2[1]*v1[1]) / v2_norm))  #Angle between robot orientation and next checkpoint
 
-    while(theta > 60):
-        x_robot_bis =  x_robot_bis - 10 * math.cos(math.radians(theta_robot)) 
-        y_robot_bis = y_robot_bis - 10* math.sin(math.radians(theta_robot))
+    while(theta > 80): #80 is the maximum angle to make sure the robot go forward to this objective
+        x_robot_bis =  x_robot_bis - increment * math.cos(math.radians(theta_robot)) 
+        y_robot_bis = y_robot_bis - increment* math.sin(math.radians(theta_robot))
         v2 = (next_checkpoint[0] - x_robot_bis , next_checkpoint[1] - y_robot_bis)
         v2_norm = math.sqrt(v2[0]*v2[0] + v2[1]*v2[1])
         theta = math.degrees(math.acos((v2[0]*v1[0]+v2[1]*v1[1]) / v2_norm))
         print(x_robot_bis,y_robot_bis,theta)
-    XY = np.insert(XY,0, [x_robot_bis, y_robot_bis]).reshape((-1,2))
-    return XY
+     #Makes the robot go backward in straight line until he see the next checkpoint in it's field of view
+    return x_robot_bis, y_robot_bis,theta_robot
+
+
+
+def checkpoint_corrector(XY):
+    new_XY = []
+    step = np.flip(XY)
+    new_XY.append(step[0])
+
+    step = np.delete(step,(0), axis=0)
+    
+
+    while(len(step) > 1):
+        vec = (new_XY[-1][0]-step[0][0], new_XY[-1][1]-step[0][1])
+        vec_norm = math.sqrt(vec[0]*vec[0] + vec[1]*vec[1])
+        
+        if(vec_norm >= 150):
+            new_XY.append(step[0])
+            step = np.delete(step,(0), axis=0)
+        else:
+            step = np.delete(step,(0), axis=0)
+
+
+    return np.flip(np.array(new_XY))       
+    
