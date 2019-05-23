@@ -85,11 +85,13 @@ def AStarSearch(start, end,grid):
             F[neighbour] = G[neighbour] + H
  
     
-    return end, None , None 
+    return [end], None , None 
 
 
 def find_vertice(path):
   #####################################"      MISE EN FORME DE LA TRAJEC POUR DES LIGNES DROITES
+    if(len(path) < 2):
+        return path
     listedecime = []
     listeangle = []
     virage = []
@@ -149,6 +151,7 @@ def checkpoint_in_fov(robot,XY):
     y_robot_bis = R_pos[1] 
     theta_robot = R_pos[2]
     next_checkpoint = XY[0]
+    print(XY)
     v1 = (math.cos(math.radians(theta_robot)),math.sin(math.radians(theta_robot)))
     v2 = (next_checkpoint[0] - x_robot_bis , next_checkpoint[1] - y_robot_bis)
     v1_norm = math.sqrt(v1[0]*v1[0] + v1[1]*v1[1])
