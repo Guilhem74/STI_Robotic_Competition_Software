@@ -23,13 +23,11 @@ class robot:
                         round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
                        'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
                        round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
-                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
-                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],
+                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle + math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle + math.pi/4))   , 0],
+        
                        'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
                                            round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
-    
-
-
 
     
   def set_position(self, x,y,a):
@@ -45,8 +43,8 @@ class robot:
                         round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
                        'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
                        round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
-                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
-                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],
+                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle + math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle + math.pi/4))   , 0],
                        'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
                                            round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
   def get_position(self):
@@ -80,38 +78,41 @@ class robot:
           if state&mask>0:
               sensors_state[sensor]=1
           mask = mask * 2
-          print(sensors_state)
+          
+          
       #Front 
-      if sensors_state['k'] +sensors_state['m']  + sensors_state['l'] >0:
+      if ( sensors_state['m'] ==1 or (sensors_state['l'] == 1 and  sensors_state['e'] ==0) or (sensors_state['k'] ==1  and sensors_state['g'] == 0 ) ) :
             
-            xi = robot.ir_sensors["FRONT"][0] + self.x
-            yi = robot.ir_sensors["FRONT"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+            xi = self.ir_sensors["FRONT"][0] + self.x
+            yi = self.ir_sensors["FRONT"][1] + self.y
+            obstacle_position.append([xi,yi])
       #BACK
-      if sensors_state['a'] +sensors_state['b']  + sensors_state['c'] +sensors_state['b']  >0:
-            xi = robot.ir_sensors["BACK"][0] + self.x
-            yi = robot.ir_sensors["BACK"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+      if sensors_state['a']  or sensors_state['b']   or sensors_state['c'] or sensors_state['b']  :
+            xi = self.ir_sensors["BACK"][0] + self.x
+            yi = self.ir_sensors["BACK"][1] + self.y
+            obstacle_position.append([xi,yi])
       #LEFT
-      if sensors_state['h'] +sensors_state['j']  + sensors_state['g']    >0:
-            xi = robot.ir_sensors["LEFT"][0] + self.x
-            yi = robot.ir_sensors["LEFT"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+      if ( sensors_state['h'] == 1  or sensors_state['j'] == 1 or (  sensors_state['g'] == 1 and sensors_state['k'] == 0)):
+            xi = self.ir_sensors["LEFT"][0] + self.x
+            yi = self.ir_sensors["LEFT"][1] + self.y
+            obstacle_position.append([xi,yi])
       #RIGHT
-      if sensors_state['e'] +sensors_state['i']  + sensors_state['f']    >0:
-            xi = robot.ir_sensors["RIGHT"][0] + self.x
-            yi = robot.ir_sensors["RIGHT"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+      if ( sensors_state['f'] == 1  or sensors_state['i'] == 1 or (  sensors_state['e'] == 1 and sensors_state['l'] == 0)):
+            xi = self.ir_sensors["RIGHT"][0] + self.x
+            yi = self.ir_sensors["RIGHT"][1] + self.y
+            obstacle_position.append([xi,yi])
       #FRONT LEFT
-      if sensors_state['g'] + sensors_state['k'] == 2:
-            xi = robot.ir_sensors["FRONTLEFT"][0] + self.x
-            yi = robot.ir_sensors["FRONTLEFT"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+      if sensors_state['g'] and  sensors_state['k'] :
+            xi = self.ir_sensors["FRONTLEFT"][0] + self.x
+            yi = self.ir_sensors["FRONTLEFT"][1] + self.y
+            obstacle_position.append([xi,yi])
+            print('FrontL')
       #FRONT RIGH
-      if sensors_state['e'] + sensors_state['l'] == 2:
-            xi = robot.ir_sensors["FRONTRIGHT"][0] + self.x
-            yi = robot.ir_sensors["FRONTRIGHT"][1] + self.y
-            obstacle_position.apppend([xi,yi])
+      if sensors_state['e'] and sensors_state['l']:
+            xi = self.ir_sensors["FRONTRIGHT"][0] + self.x
+            yi = self.ir_sensors["FRONTRIGHT"][1] + self.y
+            obstacle_position.append([xi,yi])
+            print('FrontR')
         
         
 

@@ -116,15 +116,15 @@ class Mapping:
 
 
   def new_obstacle(self, xy ): 
-        for i in xy:
-            self.obstacle.append([xi,yi])
-            
+        for element in xy:
+            self.obstacle.append(element)
+        print(self.obstacle)
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
             for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):
               self.grid[j,i] = 255
         self.grid = gaussian_filter(self.grid, sigma=7)
-
+        return self.grid
 
 
     
