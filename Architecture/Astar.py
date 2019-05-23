@@ -84,7 +84,8 @@ def AStarSearch(start, end,grid):
             H = heuristic(neighbour, end)
             F[neighbour] = G[neighbour] + H
  
-    raise RuntimeError("A* failed to find a solution")
+    
+    return end
 
 
 def find_vertice(path):

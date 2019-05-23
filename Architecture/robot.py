@@ -12,6 +12,7 @@ class robot:
     self.size_front = 30
     self.size_back = 10
     self.size_side = 20
+    self.diag_front = math.sqrt(self.size_front* self.size_front + self.size_side*self.size_side)
     self.sensor_List = []
     self.ir_sensors = {
                        'FRONT':[ round((self.size_front + self.range_ir) * math.cos(self.angle))  ,
@@ -21,7 +22,11 @@ class robot:
                        'LEFT':[round( (self.size_side + self.range_ir) * math.cos(self.angle + math.pi/2))  ,
                         round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
                        'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
-                       round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],} #Sensor position
+                       round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
+                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],
+                       'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
     
 
 
@@ -39,7 +44,11 @@ class robot:
                        'LEFT':[round( (self.size_side + self.range_ir) * math.cos(self.angle + math.pi/2))  ,
                         round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
                        'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
-                       round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],}
+                       round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
+                       'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],
+                       'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
+                                           round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
   def get_position(self):
     return [self.x*10,self.y*10,self.angle]
 
@@ -61,8 +70,38 @@ class robot:
       new_x = round(rotatedX + cx)
       new_y = round(rotatedY + cy)
       return new_x,new_y
-
-
+   
+  def sensor_state(self, state):
+      sensors_state = {'a':0,'b':0,'c':0,'d':0,'e':0,'f':0,'g':0,'h':0,'i':0,'j':0,'k':0,'l':0,'m':0}
+      mask = 1 
+      for sensor in  sensors_state:
+          if state&mask>0:
+              sensors_state[sensor]=1
+          mask = mask * 2
+          print(sensors_state)
+      #Front 
+      if sensors_state['k'] +sensors_state['m']  + sensors_state['l'] >0:
+            mapper.new_obstacle(  robot, "FRONT")
+      #BACK
+      if sensors_state['a'] +sensors_state['b']  + sensors_state['c'] +sensors_state['b']  >0:
+            mapper.new_obstacle(  robot, "BACK")
+      #LEFT
+      if sensors_state['h'] +sensors_state['j']  + sensors_state['g']    >0:
+            mapper.new_obstacle(  robot, "LEFT")
+      #RIGHT
+      if sensors_state['e'] +sensors_state['i']  + sensors_state['f']    >0:
+            mapper.new_obstacle(  robot, "RIGHT")
+      #FRONT LEFT
+      if sensors_state['g'] + sensors_state['k'] == 2:
+            mapper.new_obstacle(  robot, "FRONTLEFT")
+      #FRONT RIGH
+      if sensors_state['e'] + sensors_state['l'] == 2:
+            mapper.new_obstacle(  robot, "FRONTRIGHT")
+        
+    
+    
+    
+    
     #Update corner robot
    # for i in corner:
     #  x = i[0]
