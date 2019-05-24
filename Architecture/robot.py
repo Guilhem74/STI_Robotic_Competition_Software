@@ -8,49 +8,88 @@ class robot:
         self.y = int(round(y/10))
         self.angle = math.radians(a)
 
-        self.range_ir = 10
-        self.size_front = 30
-        self.size_back = 10
+        self.range_ir = 70
+        
+        self.size_front = 33
+        self.size_back = 7
         self.size_side = 20
         self.diag_front = math.sqrt(self.size_front* self.size_front + self.size_side*self.size_side)
         self.sensor_List = []
+        self.ir_sensors_position = {'a':[84/10,133.4,160],
+                           'b':[171/10,107,-135],
+                           'c':[171/10,-107,135],
+                           'd':[84/10,-133.4,-160],
+                           'e':[287/10,-41,-15],
+                           'f':[186/10,-95.8,-20],
+                           'g':[287/10,41,15],
+                           'h':[186/10,95.8,20],
+                           'i':[369/10,-31.91,-130],
+                           'j':[369/10,31.91,130],
+                           'k':[333/10,-7,-55],
+                           'l':[333/10,7,55],
+                           'm':[0/10,0,0],}
+        
+                           
         self.ir_sensors = {
-                           'FRONT':[ round((self.size_front + self.range_ir) * math.cos(self.angle))  ,
-                            round((self.size_front + self.range_ir) * math.sin(self.angle))   , 0],
-                           'BACK':[round((self.size_back + self.range_ir) * math.cos(self.angle+math.pi)) , 
-                           round((self.size_back + self.range_ir) * math.sin(self.angle+math.pi))  , 0],
-                           'LEFT':[round( (self.size_side + self.range_ir) * math.cos(self.angle + math.pi/2))  ,
-                            round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
-                           'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
-                           round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
-                           'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle + math.pi/4)) , 
-                                               round((self.diag_front + self.range_ir)*math.sin(self.angle + math.pi/4))   , 0],
+            'a':[0,0  ],
+            'b':[0,0  ],
+            'c':[0,0  ],
+            'd':[0,0  ],
+            'e':[0,0  ],
+            'f':[0,0  ],
+            'g':[0,0  ],
+            'h':[0,0  ],
+            'i':[0,0  ],
+            'j':[0,0  ],
+            'k':[0,0  ],
+            'l':[0,0  ],
+            'm':[0,0  ],}
+        for sensor in self.ir_sensors:
+            self.sensor_position(sensor,self.ir_sensors_position[sensor][0],self.ir_sensors_position[sensor][1],self.ir_sensors_position[sensor][2] )
+            
+    
+    
+    
+    def sensor_position(self, sensor_id, dist,theta,angle_sensor):
+        #dist = math.sqrt(x*x+y*y)
+        theta = math.radians(theta)
+        angle_sensor = math.radians(angle_sensor)
+        #ref_vector = (math.cos(self.angle),math.sin(self.angle))
+        #v2 = (x,y)
+        #theta = self.anglevec(ref_vector, v2)
+        #if sensor_id in ['c','d','f','e','k','i']:
+         #   theta = - theta
+        #theta = math.atan2(ref_vector[1],ref_vector[0]) - math.atan2(y,x)
+        
+       
+        self.ir_sensors[sensor_id] = [round(dist*math.cos(self.angle + theta) + (self.range_ir * math.cos(self.angle +angle_sensor))),
+                                     round(dist*math.sin(self.angle + theta) + (self.range_ir *math.sin(self.angle +angle_sensor)))]
 
-                           'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
-                                               round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
-
-
+        
+          
+    
     def set_position(self, x,y,a):
         self.x = int(round(x/10))
         self.y = int(round(y/10))
         self.angle = math.radians(a)
-        self.ir_sensors = {
-                           'FRONT':[ round((self.size_front + self.range_ir) * math.cos(self.angle))  ,
-                            round((self.size_front + self.range_ir) * math.sin(self.angle))   , 0],
-                           'BACK':[round((self.size_back + self.range_ir) * math.cos(self.angle+math.pi)) , 
-                           round((self.size_back + self.range_ir) * math.sin(self.angle+math.pi))  , 0],
-                           'LEFT':[round( (self.size_side + self.range_ir) * math.cos(self.angle + math.pi/2))  ,
-                            round( (self.size_side + self.range_ir) * math.sin(self.angle + math.pi/2)) , 0],
-                           'RIGHT':[round((self.size_side + self.range_ir)*math.cos(self.angle - math.pi/2)) , 
-                           round((self.size_side + self.range_ir)*math.sin(self.angle - math.pi/2))   , 0],
-                           'FRONTLEFT':[round((self.diag_front + self.range_ir)*math.cos(self.angle + math.pi/4)) , 
-                                               round((self.diag_front + self.range_ir)*math.sin(self.angle + math.pi/4))   , 0],
-                           'FRONTRIGHT':[round((self.diag_front + self.range_ir)*math.cos(self.angle - math.pi/4)) , 
-                                               round((self.diag_front + self.range_ir)*math.sin(self.angle - math.pi/4))   , 0],}
+        for sensor in self.ir_sensors:
+            self.sensor_position(sensor,self.ir_sensors_position[sensor][0],self.ir_sensors_position[sensor][1],self.ir_sensors_position[sensor][2]  )
+        
+        
+        
     def get_position(self):
         return [self.x*10,self.y*10,self.angle]
 
 
+
+    def dotproduct(self,v1, v2):
+        return sum((a*b) for a, b in zip(v1, v2))
+
+    def length(self,v):
+        return math.sqrt(self.dotproduct(v, v))
+
+    def anglevec(self,v1, v2):
+        return math.acos(self.dotproduct(v1, v2) / (self.length(v1) * self.length(v2)))
 
 
     def get_beacon_position(self):
@@ -83,44 +122,15 @@ class robot:
                 sensors_state[sensor]=0
         print(sensors_state)
 
-        #Front 
-        if ( sensors_state['m'] ==1 or (sensors_state['l'] == 1 and  sensors_state['e'] ==0) or (sensors_state['k'] ==1  and sensors_state['g'] == 0 ) ) :
+        
+        for i in sensors_state :
+            if sensors_state[i] :
 
-            xi = self.ir_sensors["FRONT"][0] + self.x
-            yi = self.ir_sensors["FRONT"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('Front')
-        #BACK
-        if sensors_state['a']  or sensors_state['b']   or sensors_state['c'] or sensors_state['b']  :
-            xi = self.ir_sensors["BACK"][0] + self.x
-            yi = self.ir_sensors["BACK"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('Back')
-        #LEFT
-        if ( sensors_state['h'] == 1  or sensors_state['j'] == 1 or (  sensors_state['g'] == 1 and sensors_state['k'] == 0)):
-            xi = self.ir_sensors["LEFT"][0] + self.x
-            yi = self.ir_sensors["LEFT"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('Left')
-
-        #RIGHT
-        if ( sensors_state['f'] == 1  or sensors_state['i'] == 1 or (  sensors_state['e'] == 1 and sensors_state['l'] == 0)):
-            xi = self.ir_sensors["RIGHT"][0] + self.x
-            yi = self.ir_sensors["RIGHT"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('Right')
-        #FRONT LEFT
-        if sensors_state['g'] and  sensors_state['k'] :
-            xi = self.ir_sensors["FRONTLEFT"][0] + self.x
-            yi = self.ir_sensors["FRONTLEFT"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('FrontL')
-        #FRONT RIGH
-        if sensors_state['e'] and sensors_state['l']:
-            xi = self.ir_sensors["FRONTRIGHT"][0] + self.x
-            yi = self.ir_sensors["FRONTRIGHT"][1] + self.y
-            obstacle_position.append([xi,yi])
-            print('FrontR')
+                xi = self.ir_sensors[i][0] + self.x
+                yi = self.ir_sensors[i][1] + self.y
+                obstacle_position.append([xi,yi])
+                print('Sensor ',i)
+        
 
 
 
@@ -131,7 +141,7 @@ class robot:
         X,Y,_=self.get_position()
         Distance_X=Final_Pos[0]-X
         Distance_Y=Final_Pos[1]-Y
-        if(math.sqrt(Distance_X*Distance_X+Distance_Y*Distance_Y)<100):
+        if(math.sqrt(Distance_X*Distance_X+Distance_Y*Distance_Y)<200):
             return True
         return False
     
