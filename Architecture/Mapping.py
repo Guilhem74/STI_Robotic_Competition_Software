@@ -18,12 +18,12 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-    self.obstacle_size = 10 + 13 +3
+    self.obstacle_size = 15
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
-    self.grid = np.ones((self.H,self.W), dtype=int)
+    self.grid = np.zeros((self.H,self.W), dtype=int)
     self.grid_reward = np.ones((self.H,self.W), dtype=int)
-    self.build_map(0)
+    #self.build_map(0)
 
 
 
@@ -66,34 +66,69 @@ class Mapping:
     A[:,:,1]=A[:,:,1]/max(1,np.max(A[:,:,1]))
     A[:,:,2]=A[:,:,2]/max(1,np.max(A[:,:,2]))
     plt.figure(figsize=(20,20))
-    plt.imshow(A/np.max(A),origin='lower')
+    plt.imshow(A,origin='lower')
     plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
-    return A
+    return A;
     
   def Get_Display_Pos_Robot(self,robot):
     A = np.zeros((self.H,self.W))
     cx = robot.x
     cy = robot.y
+    corner = []
     #Front left corner of robot
-    x0 = cx - robot.size_front 
-    y0 = cy - robot.size_side 
+    for i in range(robot.size_front):
+        for j in range(robot.size_side):
+            x0 = cx - i 
+            y0 = cy - j
+            corner.append([x0,y0])
+            
     #Front right corner of robot
-    x1 = cx - robot.size_front 
-    y1 = cy + robot.size_side 
+    for i in range(robot.size_front):
+        for j in range(robot.size_side):
+            x0 = cx - i 
+            y0 = cy + j
+            corner.append([x0,y0])
+     
     #back left corner of robot
-    x2 = cx + robot.size_back 
-    y2 = cy - robot.size_side 
+    for i in range(robot.size_back):
+        for j in range(robot.size_side):
+            x0 = cx + i 
+            y0 = cy - j
+            corner.append([x0,y0])
+    
     #Back right corner of robot
-    x3 = cx + robot.size_back
-    y3 = cy + robot.size_side
-    corner = [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
+    for i in range(robot.size_back):
+        for j in range(robot.size_side):
+            x0 = cx + i 
+            y0 = cy + j
+            corner.append([x0,y0])
+
+    
+        #Update corner robot
+    for i in corner:
+        x = i[0]
+        y = i[1]
+        x,y = self.rotation(x,y,cx,cy,-(robot.angle+math.pi/2))
+        A[x,y] = 255
+        A[cx,cy] = 255
     new_point = []
-    A[cy-20:cy+20,cx-20:cx+20]=128
+    #A[cy-20:cy+20,cx-20:cx+20]=100
     return A
     
     
   
+  def rotation(self,x,y,cx,cy,theta):
+        tempX = x - cx
+        tempY = y - cy
 
+        #now apply rotation
+        rotatedX = tempX*math.cos(theta) - tempY*math.sin(theta)
+        rotatedY = tempX*math.sin(theta) + tempY*math.cos(theta)
+
+        #translate back
+        new_x = round(rotatedX + cx)
+        new_y = round(rotatedY + cy)
+        return new_x,new_y        
   
 
     
@@ -116,6 +151,7 @@ class Mapping:
 
   def new_obstacle(self, xy ): 
         for element in xy:
+            print("NEW OBSATCLE")
             self.obstacle.append(element)
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
@@ -127,7 +163,7 @@ class Mapping:
 
     
   
-        
+
 
 
 
