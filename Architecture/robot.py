@@ -1,33 +1,38 @@
 
 import numpy as np
 import math
-
+import beacon as Beacon
 class robot:
     def __init__(self,x,y,a):
         self.x = int(round(x/10))
         self.y = int(round(y/10))
         self.angle = math.radians(a)
-
-        self.range_ir = 70
+        self.ir_range = 10
+        self.ir_range_back = 50
+        
         
         self.size_front = 33
         self.size_back = 7
         self.size_side = 20
         self.diag_front = math.sqrt(self.size_front* self.size_front + self.size_side*self.size_side)
         self.sensor_List = []
-        self.ir_sensors_position = {'a':[84/10,133.4,160],
-                           'b':[171/10,107,-135],
-                           'c':[171/10,-107,135],
-                           'd':[84/10,-133.4,-160],
-                           'e':[287/10,-41,-15],
-                           'f':[186/10,-95.8,-20],
-                           'g':[287/10,41,15],
-                           'h':[186/10,95.8,20],
-                           'i':[369/10,-31.91,-130],
-                           'j':[369/10,31.91,130],
-                           'k':[333/10,-7,-55],
-                           'l':[333/10,7,55],
-                           'm':[0/10,0,0],}
+        self.ir_sensors_position = {
+                            #BACK
+                           'a':[84/10,133.4,160,self.ir_range_back],
+                           'b':[171/10,107,-135,self.ir_range_back],
+                           'c':[171/10,-107,135,self.ir_range_back],
+                           'd':[84/10,-133.4,-160,self.ir_range_back],
+            
+            
+                           'e':[287/10,-41,-15,self.ir_range],
+                           'f':[186/10,-95.8,-20,self.ir_range],
+                           'g':[287/10,41,15,self.ir_range],
+                           'h':[186/10,95.8,20,self.ir_range],
+                           'i':[369/10,-31.91,-130,self.ir_range],
+                           'j':[369/10,31.91,130,self.ir_range],
+                           'k':[333/10,-7,-55,self.ir_range],
+                           'l':[333/10,7,55,self.ir_range],
+                           'm':[340/10,0,0,self.ir_range],}
         
                            
         self.ir_sensors = {
@@ -50,7 +55,7 @@ class robot:
     
     
     
-    def sensor_position(self, sensor_id, dist,theta,angle_sensor):
+    def sensor_position(self, sensor_id, dist,theta,angle_sensor ):
         #dist = math.sqrt(x*x+y*y)
         theta = math.radians(theta)
         angle_sensor = math.radians(angle_sensor)
@@ -62,8 +67,8 @@ class robot:
         #theta = math.atan2(ref_vector[1],ref_vector[0]) - math.atan2(y,x)
         
        
-        self.ir_sensors[sensor_id] = [round(dist*math.cos(self.angle + theta) + (self.range_ir * math.cos(self.angle +angle_sensor))),
-                                     round(dist*math.sin(self.angle + theta) + (self.range_ir *math.sin(self.angle +angle_sensor)))]
+        self.ir_sensors[sensor_id] = [round(dist*math.cos(self.angle + theta) + (self.ir_sensors_position[sensor_id][3] * math.cos(self.angle +angle_sensor))),
+                                     round(dist*math.sin(self.angle + theta) + (self.ir_sensors_position[sensor_id][3]  *math.sin(self.angle +angle_sensor))),]
 
         
           
@@ -93,20 +98,9 @@ class robot:
 
 
     def get_beacon_position(self):
-        return beacon_main()
+        return Beacon.beacon_main()
 
-    def rotation(self,x,y,cx,cy,theta):
-        tempX = x - cx
-        tempY = y - cy
-
-        #now apply rotation
-        rotatedX = tempX*math.cos(theta) - tempY*math.sin(theta)
-        rotatedY = tempX*math.sin(theta) + tempY*math.cos(theta)
-
-        #translate back
-        new_x = round(rotatedX + cx)
-        new_y = round(rotatedY + cy)
-        return new_x,new_y
+    
 
     def sensor_state(self,state):
         obstacle_position = []
@@ -116,7 +110,7 @@ class robot:
         for sensor in  sensors_state:
             if state&(mask*sensors_state[sensor])>0:
                 sensors_state[sensor]=1
-                print(sensor)
+                
 
             else:
                 sensors_state[sensor]=0
@@ -129,7 +123,7 @@ class robot:
                 xi = self.ir_sensors[i][0] + self.x
                 yi = self.ir_sensors[i][1] + self.y
                 obstacle_position.append([xi,yi])
-                print('Sensor ',i)
+                
         
 
 
@@ -146,14 +140,7 @@ class robot:
         return False
     
     
-    #Update corner robot
-   # for i in corner:
-    #  x = i[0]
-    #  y = i[1]
-    #  x,y = self.rotation(x,y,cx,cy,theta)
-   #  grid[x,y] = [255,255,255]
-    #Update sensor position
-  #  for s in self.sensor_List:
-  #    s.set_position(self)
+
+
 
 
