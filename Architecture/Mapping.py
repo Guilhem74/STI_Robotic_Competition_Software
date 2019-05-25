@@ -19,19 +19,11 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-<<<<<<< HEAD
     self.obstacle_size = 5
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.zeros((self.H,self.W), dtype=int)
     self.grid_reward = np.zeros((self.H,self.W), dtype=int)
-=======
-    self.obstacle_size = 15
-    self.bottle_size = 5
-    #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
-    self.grid = np.zeros((self.H,self.W), dtype=int)
-    self.grid_reward = np.ones((self.H,self.W), dtype=int)
->>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
     #self.build_map(0)
 
 
@@ -78,13 +70,8 @@ class Mapping:
     
     plt.figure(figsize=(20,20))
     plt.imshow(A,origin='lower')
-<<<<<<< HEAD
     #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     
-=======
-    plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
-    return A;
->>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
     
   def Get_Display_Pos_Robot(self,robot):
     A = np.zeros((self.H,self.W))
@@ -124,15 +111,9 @@ class Mapping:
     for i in corner:
         x = i[0]
         y = i[1]
-<<<<<<< HEAD
         x,y = self.rotation(x,y,cx,cy,(robot.angle+ math.pi))
         A[y,x] = 255
         A[cy,cx] = 255
-=======
-        x,y = self.rotation(x,y,cx,cy,-(robot.angle+math.pi/2))
-        A[x,y] = 255
-        A[cx,cy] = 255
->>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
     new_point = []
     #A[cy-20:cy+20,cx-20:cx+20]=100
     return A
