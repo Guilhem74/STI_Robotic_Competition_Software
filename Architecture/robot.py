@@ -7,8 +7,12 @@ class robot:
         self.x = int(round(x/10))
         self.y = int(round(y/10))
         self.angle = math.radians(a)
+<<<<<<< HEAD
         self.ir_range = 10
         self.ir_range_back = 50
+=======
+
+>>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
         
         
         self.size_front = 33
@@ -16,6 +20,7 @@ class robot:
         self.size_side = 20
         self.diag_front = math.sqrt(self.size_front* self.size_front + self.size_side*self.size_side)
         self.sensor_List = []
+<<<<<<< HEAD
         self.ir_sensors_position = {
                             #BACK
                            'a':[84/10,133.4,160,self.ir_range_back],
@@ -33,6 +38,21 @@ class robot:
                            'k':[333/10,-7,-55,self.ir_range],
                            'l':[333/10,7,55,self.ir_range],
                            'm':[340/10,0,0,self.ir_range],}
+=======
+        self.ir_sensors_position = {'a':[84/10,133.4,160,20],
+                           'b':[171/10,107,-135,20],
+                           'c':[171/10,-107,135,20],
+                           'd':[84/10,-133.4,-160,20],
+                           'e':[287/10,-41,-15,20],
+                           'f':[186/10,-95.8,-20,20],
+                           'g':[287/10,41,15,20],
+                           'h':[186/10,95.8,20,20],
+                           'i':[369/10,-31.91,-130,20],
+                           'j':[369/10,31.91,130,20],
+                           'k':[333/10,-7,-55,20],
+                           'l':[333/10,7,55,20],
+                           'm':[340/10,0,0,20],}
+>>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
         
                            
         self.ir_sensors = {

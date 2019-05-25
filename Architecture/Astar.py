@@ -7,7 +7,11 @@ import time
 def validate_objective(Set_Objective,grid, Get_Pos):
     x_robot = round(Get_Pos[0]/10)
     y_robot = round(Get_Pos[1]/10)
+<<<<<<< HEAD
     #grid[x_robot-10:x_robot+10 , y_robot-10 : y_robot+10] = 0
+=======
+    grid[x_robot-20:x_robot+20 , y_robot-20 : y_robot+20] = 0
+>>>>>>> 85a83b50bc009c1ae69d356e2970d22939ad7258
         
     x, y = round(Set_Objective[0]/10) , round(Set_Objective[1]/10)
     d = 10
