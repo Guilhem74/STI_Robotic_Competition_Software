@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 import math
+from picamera import PiCamera
 
 
-
-
+#Led positions 
 center_cone_x =  369
 center_cone_y = 262
 RedLed = (0,0)
@@ -19,7 +19,12 @@ b_high = (15, 255,255)
 r_low = (105, 75, 75)
 r_high = (130, 255,255)
 
-
+g_low = (0, 0, 0)
+g_high = (255, 255,255)
+b_low = (0, 0, 0)
+b_high = (255, 255,255)
+r_low = (0, 0, 0)
+r_high = (255, 255,255)
 
 def extract_channel(img):
 
@@ -78,14 +83,21 @@ def center(channel,img,center_cone_x,center_cone_y):
 
         gray_image = cv2.GaussianBlur(gray,(5,5),0) 
         # find contours in the binary image
-        contours, hierarchy = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        if (len(contours) == 0):
+            return None, None
         c = contours[0]
         # calculate moments for each contour
         M = cv2.moments(c)
 
         # calculate x,y coordinate of center
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
+        try:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+        except:
+            cX = 0
+            cY = 0
+            
         center_position.append([cX,cY])
         cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
         cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
@@ -142,10 +154,13 @@ def get_position(angle,RedLed,GreenLed,BlueLed):
 
     y2 = GreenLed[1]
 
+    try:
+        t1 = 1/math.tan((angle[1] - angle[0] ))
 
-    t1 = 1/math.tan((angle[1] - angle[0] ))
-
-    t2 = 1/math.tan((angle[2] - angle[1] ))
+        t2 = 1/math.tan((angle[2] - angle[1] ))
+    except:
+        t1 = 1
+        t2 = 2
 
     t3 = (1-t1*t2)/(t1+t2)
 
@@ -178,10 +193,13 @@ def beacon_main():
     #Green LED is the reference
     
 
-    #Led positions 
     
+    camera = PiCamera()
+    camera.shutter_speed = 8000
+    camera.capture('image_beacon.jpg')
+    raw_image = cv2.imread('image_beacon.jpg')
 
-    raw_image = cv2.imread('BeaconPhoto/(0,0).jpg')
+    camera.close()
     raw_image  = cv2.flip( raw_image, 1 )
     
     channel,img = extract_channel(raw_image)
@@ -190,10 +208,11 @@ def beacon_main():
 
     center_position, r_img = center(channel,raw_image,center_cone_x,center_cone_y)
    
-
+    if center_position == None:
+        return None
     angle = get_angles(center_position,center_cone_x,center_cone_y )
+    cv2.imwrite('angle.jpg',r_img)
     
-
 
     return get_position(angle,RedLed,GreenLed,BlueLed)
 
