@@ -19,7 +19,7 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-    self.obstacle_size = 5
+    self.obstacle_size = 25
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.zeros((self.H,self.W), dtype=int)
@@ -51,7 +51,7 @@ class Mapping:
 
 
 
-  def display(self,G,path,robot):
+  def display(self,G,path,robot,checkpoint):
     A = np.zeros((self.H,self.W,3))    
     A[:,:,0] = self.grid[:,:]
     if G!= None:
@@ -63,14 +63,16 @@ class Mapping:
     Robot_Array=self.Get_Display_Pos_Robot(robot)
     A[:,:,0]=A[:,:,0] + self.grid_reward[:,:]
     A[:,:,1]=A[:,:,1] + self.grid_reward[:,:]
-    A[:,:,2]=Robot_Array
+    for c in checkpoint:
+        A[int(c[1]/10),int(c[0]/10)] = A[int(c[1]/10),int(c[0]/10)] +  [255,255,255] 
+    A[:,:,2]= A[:,:,2] + Robot_Array
     A[:,:,0]=A[:,:,0]/max(1,np.max(A[:,:,0]))
     A[:,:,1]=A[:,:,1]/max(1,np.max(A[:,:,1]))
     A[:,:,2]=A[:,:,2]/max(1,np.max(A[:,:,2]))
     
     plt.figure(figsize=(20,20))
     plt.imshow(A,origin='lower')
-    #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
+    plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     
     
   def Get_Display_Pos_Robot(self,robot):
@@ -148,13 +150,12 @@ class Mapping:
 
   def new_obstacle(self, xy ): 
         for element in xy:
-            print("NEW OBSATCLE")
             self.obstacle.append(element)
         for obstacle in self.obstacle:
           for i in range(max(0,obstacle[0] - self.obstacle_size) ,min(self.H,obstacle[0] + self.obstacle_size )):
             for j in range(max(0,obstacle[1] - self.obstacle_size)  ,min(self.W,obstacle[1] + self.obstacle_size)  ):
               self.grid[j,i] = 255
-        self.grid = gaussian_filter(self.grid, sigma=30)
+        #self.grid = gaussian_filter(self.grid, sigma=9)
         return self.grid
 
 

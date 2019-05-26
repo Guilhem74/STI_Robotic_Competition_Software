@@ -7,7 +7,7 @@ class robot:
         self.x = int(round(x/10))
         self.y = int(round(y/10))
         self.angle = math.radians(a)
-        self.ir_range = 10
+        self.ir_range = 25
         self.ir_range_back = 50
         
         
