@@ -55,11 +55,15 @@ def heuristic( start, goal):
     #Use Chebyshev distance heuristic if we can move one square either
     #adjacent or diagonal
     D = 1
-    D2 = 0
+    D2 =2
     dx = abs(start[0] - goal[0])
     dy = abs(start[1] - goal[1])
-    #return D2 * math.sqrt(dx*dx + dy*dy)
-    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
+    if dx > dy :
+        return 14*dy + 10*(dx - dy)
+    else:
+        return 14*dx + 10*(dy - dx)
+    #return D2 * math.sqrt(dx*dx + dy*dy) + D*(dx + dy)
+    #return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
     #return dx + dy
  
 def get_vertex_neighbours( pos,grid):
@@ -241,7 +245,7 @@ def checkpoint_corrector(XY):
         vec = (new_XY[-1][0]-step[0][0], new_XY[-1][1]-step[0][1])
         vec_norm = math.sqrt(vec[0]*vec[0] + vec[1]*vec[1])
         
-        if(vec_norm >= 150):
+        if(vec_norm >= 100):
             new_XY.append(step[0])
             step = np.delete(step,(0), axis=0)
         else:
