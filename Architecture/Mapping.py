@@ -19,7 +19,7 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-    self.obstacle_size = 25
+    self.obstacle_size = 30
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.zeros((self.H,self.W), dtype=int)

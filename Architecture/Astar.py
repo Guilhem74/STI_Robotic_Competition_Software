@@ -4,28 +4,83 @@ import math
 import time
 
 
-def validate_objective(Set_Objective,grid, Get_Pos):
-    x_robot = round(Get_Pos[0]/10)
-    y_robot = round(Get_Pos[1]/10)
-    #grid[x_robot-10:x_robot+10 , y_robot-10 : y_robot+10] = 0
+    
+    
+
+def get_segement(robot_pos,grid,theta):
+    dist_max = 200
+
+
+    x_r = int(round(robot_pos[0]/10))
+    y_r = int(round(robot_pos[1]/10))
+    angle_robot = robot_pos[2]
+    up_right = []
+    up_left = []
+    down_right = []
+    down_left = []
+    up = []
+    down = []
+    left = []
+    right = []
+    for d in range(dist_max):
         
+        up_right.append(grid[y_r - d ,x_r + d])
+        up_left.append(grid[y_r + d ,x_r + d])
+        down_right.append(grid[y_r - d ,x_r - d])
+        down_left.append(grid[y_r + d ,x_r - d])
+        
+        down.append(grid[y_r  ,x_r - d])
+        up.append(grid[y_r  ,x_r + d])
+        left.append(grid[y_r + d ,x_r ])
+        right.append(grid[y_r - d ,x_r ])
+        
+
+    if(0<theta<=22.5):
+        return  up
+    elif(22.5<theta<=45):
+        return up_left
+    elif(45<theta<=67.5):
+        return left
+    elif(67.5<theta<=90):
+        return down_left
+    elif(90<theta<=112.5):
+        return down_right
+    elif(112.5<theta<=135):
+        return down
+    elif(135<theta<=157.5):
+        return right
+    else:
+        return up_right
+    
+
+    
+
+
+    
+    
+def validate_objective(Set_Objective,grid, Get_Pos):
+    x_robot = int(Get_Pos[0]/10)
+    y_robot = int(Get_Pos[1]/10)
+    #grid[x_robot-10:x_robot+10 , y_robot-10 : y_robot+10] = 0
+    
     x, y = round(Set_Objective[0]/10) , round(Set_Objective[1]/10)
     d = 10
-    neigh = [[d,d],[-d,d],[d,-d],[-d,-d]]
-    i = 0
-    new_y,new_x = y,x
-    while(grid[ new_y,new_x] != 0 and d < 200 and new_x <799 and new_x>0 and new_y <799 and new_y>0):
-        neigh = [[d,d],[-d,d],[d,-d],[-d,-d]]
-        
-        
-        new_x,new_y = x + neigh[i][0]  , y + neigh[i][1] 
-        print(new_x,new_y)
-        i = i+1
-        if i ==3:
-            d = d + 20
-            i=0
+    
+    if(grid[y,x]):
+        return[x *10 , y*10]
+    
+    candidate = [[x,y],[x,y],[x,y],[x,y]]
+    while( d < 700 ):
+        candidate = [[x+d,y+d],[x+d,y-d],[x-d,y+d],[x-d,y-d]]
+        for i in candidate:
+            if i[0] > 0 and i[0] < 799 and i[1] > 0 and i[1] < 799:
+                if grid[i[1],i[0]] == 0:
+                    print("new coordinate: ",i[0] *10 , i[1]*10 )
+                    return [i[0] *10 , i[1]*10]
             
-    return [new_x *10 , new_y*10]
+        d = d + 20
+
+
         
 """    
     x = round(Get_Pos[0] / 10)
