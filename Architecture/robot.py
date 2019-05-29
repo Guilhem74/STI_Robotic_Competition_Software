@@ -1,7 +1,8 @@
 
 import numpy as np
 import math
-import beacon as Beacon
+
+#import beacon as Beacon
 class robot:
     def __init__(self,x,y,a):
         self.x = int(round(x/10))
@@ -150,15 +151,17 @@ class robot:
         if(math.sqrt(Distance_X*Distance_X+Distance_Y*Distance_Y)<200):
             return True
         return False
-    def Free_Space_Around(self,Map_Result,Sensor_State):
-        Space_Free = {'Front':1,'Left':1,'Right':1,'Back':1}
-        if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m']):
+    def Free_Space_Around(self,Sensor_State, Map_State):
+            
+        #Get information from sensor and map
+        Space_Free = {'Front':1,'Left':1,'Right':1,'Back':1 ,'FrontLeft':1,'FrontRight':1, 'BackLeft':1, 'BackRight':1, }
+        if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m'] or Map_State["Front"] ):
             Space_Free['Front']=0;
-        if(Sensor_State['a'] or Sensor_State['b'] or Sensor_State['c'] or Sensor_State['d'] ):
+        if(Sensor_State['a'] or Sensor_State['b'] or Sensor_State['c'] or Sensor_State['d'] or Map_State["Back"] ):
             Space_Free['Back']=0;
-        if(Sensor_State['h'] or Sensor_State['g'] or Sensor_State['j']):
+        if(Sensor_State['h'] or Sensor_State['g'] or Sensor_State['j'] or  Map_State["Left"]):
             Space_Free['Left']=0;
-        if(Sensor_State['e'] or Sensor_State['f'] or Sensor_State['i']):
+        if(Sensor_State['e'] or Sensor_State['f'] or Sensor_State['i'] or  Map_State["Right"]):
             Space_Free['Right']=0;
            
         return Space_Free

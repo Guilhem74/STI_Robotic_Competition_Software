@@ -161,7 +161,20 @@ class Mapping:
 
     
   
-
+  def Is_Position_Free(self,coord,dist):
+        
+        x = int(coord[0]/10)
+        y = int(coord[1]/10)
+        dist = int(dist/10)
+        if(x>dist and x<799-dist and y>dist and y<799-dist):
+            value = np.max(self.grid[y-dist:y+dist ,x-dist:x+dist ])
+            print(self.grid[y-dist:y+dist ,x-dist:x+dist ],value)
+            if value:
+                return True
+            else:
+                return False
+        else:
+            return False
 
 
 

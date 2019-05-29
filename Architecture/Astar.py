@@ -3,58 +3,161 @@ import numpy as np
 import math
 import time
 
-
+def get_segment(coord,grid,orientation,dist_max):
     
     
 
-def get_segement(robot_pos,grid,theta):
-    dist_max = 200
-
-
-    x_r = int(round(robot_pos[0]/10))
-    y_r = int(round(robot_pos[1]/10))
-    angle_robot = robot_pos[2]
-    up_right = []
-    up_left = []
-    down_right = []
-    down_left = []
-    up = []
-    down = []
-    left = []
-    right = []
+    x = coord[0]
+    y = coord[1]
+    
+    detection_line = []
     for d in range(dist_max):
         
-        up_right.append(grid[y_r - d ,x_r + d])
-        up_left.append(grid[y_r + d ,x_r + d])
-        down_right.append(grid[y_r - d ,x_r - d])
-        down_left.append(grid[y_r + d ,x_r - d])
+        detection_line.append(grid[y +orientation[1]* d ,x  + orientation[0]*  d])
         
-        down.append(grid[y_r  ,x_r - d])
-        up.append(grid[y_r  ,x_r + d])
-        left.append(grid[y_r + d ,x_r ])
-        right.append(grid[y_r - d ,x_r ])
+    return detection_line
+    
+def  get_map_information(robot_pos,grid,theta):
+    distance_back = 7
+    distance_front =33
+    distance = 20
+    x_r = int(round(robot_pos[0]/10))
+    y_r = int(round(robot_pos[1]/10))
+    list_maximum_lines = []
+    orientation = (1,1)
+    dist_max_detection = 50
+    #UP
+    if(-22.5<theta<=22.5):
+        x0 = x_r + distance_front
+        x1 = x_r + distance_front
+        y0 = y_r
+        y1 = y_r
+        dx0 = 0
+        dy0 = 1
+        dx1 = 0
+        dy1 = -1
+        orientation = (1,0)
         
-
-    if(0<theta<=22.5):
-        return  up
-    elif(22.5<theta<=45):
-        return up_left
-    elif(45<theta<=67.5):
-        return left
-    elif(67.5<theta<=90):
-        return down_left
-    elif(90<theta<=112.5):
-        return down_right
-    elif(112.5<theta<=135):
-        return down
-    elif(135<theta<=157.5):
-        return right
+    #UPLeft
+    elif(22.5<theta<=67.5):
+        x0 = x_r + distance_front
+        x1 = x_r + distance_front
+        y0 = y_r + distance
+        y1 = y_r + distance
+        dx0 = -1
+        dy0 = 1
+        dx1 = 1
+        dy1 = -1
+        orientation = (1,1)
+    #Left
+    elif(67.5<theta<=90+22.5):
+        x0 = x_r + 13
+        x1 = x_r + 13
+        y0 = y_r + distance
+        y1 = y_r + distance
+        dx0 = -1
+        dy0 = 0
+        dx1 = 1
+        dy1 = 0
+        orientation = (0,1)
+    #DownLeft    
+    elif(90+22.5<theta<=180-22.5):
+        x0 = x_r - distance_back
+        x1 = x_r - distance_back
+        y0 = y_r + distance
+        y1 = y_r + distance
+        dx0 = -1
+        dy0 = -1
+        dx1 = 1
+        dy1 = 1
+        orientation = (-1,1)
+    #DOWN
+    elif(180-22.5<theta<=180+22.5):
+        x0 = x_r - distance_back
+        x1 = x_r - distance_back
+        y0 = y_r
+        y1 = y_r 
+        dx0 = 0
+        dy0 = -1
+        dx1 = 0
+        dy1 = 1
+        orientation = (-1,0)
+     #Down right   
+    elif(180+22.5<theta<=270-22.5):
+        x0 = x_r - distance_back
+        x1 = x_r - distance_back
+        y0 = y_r - distance
+        y1 = y_r - distance
+        dx0 = -1
+        dy0 = 1
+        dx1 = 1
+        dy1 = -1
+        orientation = (-1,-1)
+        
+        
+    elif(270-22.5<theta<=270+22.5):
+        x0 = x_r +13
+        x1 = x_r +13
+        y0 = y_r - distance
+        y1 = y_r - distance
+        dx0 = -1
+        dy0 = 0
+        dx1 = 1
+        dy1 = 0
+        orientation = (0,-1)
     else:
-        return up_right
+        x0 = x_r + distance_front
+        x1 = x_r + distance_front
+        y0 = y_r - distance
+        y1 = y_r - distance
+        dx0 = -1
+        dy0 = 1
+        dx1 = 1
+        dy1 = -1
+        orientation = (1,-1)
+        
+        
+    for i in range(distance-1):
+        if(x0>0 and x0<7999 and y0>0 and y0<7999):
+            list_maximum_lines.append(max(
+                get_segment([x0,y0],grid,orientation,dist_max_detection)))
+        else:
+            list_maximum_lines.append(255)
+                
+        if(x1>0 and x1<7999 and y1>0 and y1<7999):
+            list_maximum_lines.append(max(
+                get_segment([x1,y1],grid,orientation,dist_max_detection)))
+        else:
+                list_maximum_lines.append(255)
+                
+        x0 = x0 + dx0
+        x1 = x1 + dx1
+        y0 = y0 + dy0
+        y1 = y1 + dy1
+        
+        
+        
+    return max(list_maximum_lines)
+        
+        
+        
+def get_obstacle_robot(robot_position,grid_updated):
+    obstacle_robot = {"Front" :get_map_information(robot_position,grid_updated,0),
+                              "FrontLeft": get_map_information(robot_position,grid_updated,45),
+                              "Left": get_map_information(robot_position,grid_updated,90),
+                              "BackLeft": get_map_information(robot_position,grid_updated,135),
+                              "Back": get_map_information(robot_position,grid_updated,180),
+                              "BackRigth": get_map_information(robot_position,grid_updated,180+45),
+                              "Right": get_map_information(robot_position,grid_updated,270),
+                              "FrontRight": get_map_information(robot_position,grid_updated,270+45),
+                             }
+    return obstacle_robot
     
 
+        
+        
     
-
+        
 
     
     

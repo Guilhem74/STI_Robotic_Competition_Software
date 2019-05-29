@@ -1,34 +1,64 @@
+
+from picamera import PiCamera
 import cv2
 import numpy as np
 import math
-from picamera import PiCamera
 
+center_cone_x = 975#960
+center_cone_y = 600
+RedLed = (0,8000)
+GreenLed = (8000,8000)
+BlueLed = (8000,0)
+YellowLed = (0,0)
 
-#Led positions 
-center_cone_x =  369
-center_cone_y = 262
-RedLed = (0,0)
-GreenLed = (3000,3000)
-BlueLed = (0,3000)
-YellowLed = (3000,0)
-
-g_low = (36, 75, 75)
-g_high = (70, 255,255)
-b_low = (0, 100, 100)
-b_high = (15, 255,255)
-r_low = (105, 75, 75)
+g_low = (30, 80, 75)
+g_high = (40, 255,255)
+b_low = (10, 125, 125)
+b_high = (20, 255,255)
+r_low = (110, 100, 100)
 r_high = (130, 255,255)
 
-g_low = (0, 0, 0)
-g_high = (255, 255,255)
-b_low = (0, 0, 0)
-b_high = (255, 255,255)
-r_low = (0, 0, 0)
-r_high = (255, 255,255)
+y_low = (70,40, 120)
+y_high = (90, 255,255)
+
+
+
+def center(selection,channel,img,center_cone_x,center_cone_y):
+
+    center_position = [(0,0),(0,0),(0,0),(0,0)]
+    color = [(0,255,255,),(0,0,255,),(0,255,0),(255,0,0)]
+    # convert the grayscale image to binary image
+    for i in selection:
+        gray_image = cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
+        gray_image = cv2.GaussianBlur(gray_image,(5,5),1)
+        
+
+        
+        # find contours in the binary image
+        contours, hierarchy = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        c = contours[0]
+        # calculate moments for each contour
+        M = cv2.moments(c)
+
+        # calculate x,y coordinate of center
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        center_position[i] = (cX,cY)
+        cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
+        cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
+     
+    cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
+    
+
+    cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
+    return center_position, img
+
+
+
 
 def extract_channel(img):
 
-    img = cv2.GaussianBlur(img,(5,5),0)
+    #img = cv2.GaussianBlur(img,(5,5),1)
 
     ## convert to hsv
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
@@ -36,7 +66,8 @@ def extract_channel(img):
     mask_g = cv2.inRange(hsv,g_low ,g_high )
     mask_b = cv2.inRange(hsv, b_low, b_high)
     mask_r = cv2.inRange(hsv, r_low, r_high)
-
+    mask_y = cv2.inRange(hsv, y_low, y_high)
+    
     #gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
 
@@ -48,83 +79,77 @@ def extract_channel(img):
     imask_r = mask_r>0
     imask_g = mask_g>0
     imask_b = mask_b>0
+    imask_y = mask_y>0
   
 
     green = np.zeros_like(img, np.uint8)
     red = np.zeros_like(img, np.uint8)
     blue = np.zeros_like(img, np.uint8)
+    yellow = np.zeros_like(img, np.uint8)
 
 
     red[imask_r] = img[imask_r]
     green[imask_g] = img[imask_g]
     blue[imask_b] = img[imask_b]
+    yellow[imask_y] = img[imask_y]
 
     ## save 
 
     image = np.zeros_like(img, np.uint8)
-    image = red + blue +green
-    channel = [red,green,blue]
+    image = red + blue +green + yellow
+    channel = [yellow, red,green,blue]
+    
     return channel , image
 
 
 
 
-
-
-
-
-def center(channel,img,center_cone_x,center_cone_y):
-
-    center_position = []
-    color = [(0,0,255,),(0,255,0),(255,0,0)]
-    # convert the grayscale image to binary image
+def channel_selection(channel):
+    color = [(0,255,255),(255,0,0,),(0,255,0),(0,0,255)]
+    selection = []
+    position = []
     for i in range(len(channel)):
-        gray = cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
+        
+        
+        gray_image = cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
+        non_zero = np.nonzero(gray_image)
+        l = len(non_zero[0])//2
+        if l > 0:
+            selection.append(i)
+            position = ((non_zero[1][l],non_zero[0][l]))
+        
+        
+        
+    if len(selection) == 4 :
+        selection.remove(2)
 
-        gray_image = cv2.GaussianBlur(gray,(5,5),0) 
-        # find contours in the binary image
-        _, contours, _ = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        if (len(contours) == 0):
-            return None, None
-        c = contours[0]
-        # calculate moments for each contour
-        M = cv2.moments(c)
+    return selection #, position
 
-        # calculate x,y coordinate of center
-        try:
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-        except:
-            cX = 0
-            cY = 0
-            
-        center_position.append([cX,cY])
-        cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
-        cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
-     
-    cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
+
+
+
+
+
     
 
-    cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
-    return center_position, img
-
-def get_angles(center_position,center_cone_x,center_cone_y ):
-    vec = []
-    angle = []
-    norm = []
+def get_angles(selection, center_position,center_cone_x,center_cone_y ):
+    vec = [[0,0],[0,0],[0,0],[0,0]]
+    angle = [0,0,0,0]
+    
     ref_vector = (200,0) 
+    print(center_position)
     ref_norm = math.sqrt(ref_vector[0]*ref_vector[0] + ref_vector[1]*ref_vector[1])
-    for i in center_position:
+    for i in selection:
 
-        vec.append([i[0] - center_cone_x,i[1] - center_cone_y ])
-    for i in vec:
-        norm.append( math.sqrt(i[0]*i[0] + i[1]*i[1]) ) 
+        vec[i] = ([center_position[i][0] - center_cone_x , center_position[i][1] - center_cone_y ])
+    
+        
 
 
-    for i in range(len(vec)):
+   
         try:
             
-            angle.append((math.atan2(ref_vector[1],ref_vector[0]) - math.atan2(vec[i][1],vec[i][0])))
+            angle[i]=((math.atan2(ref_vector[1],ref_vector[0]) - math.atan2(vec[i][1],vec[i][0])))
         except:
             pass
 
@@ -140,34 +165,41 @@ def get_angles(center_position,center_cone_x,center_cone_y ):
     return angle
 
 
-def get_position(angle,RedLed,GreenLed,BlueLed):
+def get_position(selection,angle,Beacon_position):
     #Choose Balise GreenLed as origin
-    x1 = RedLed[0] - GreenLed[0] 
+    B = []
+    
 
-    y1 = RedLed[1] - GreenLed[1]
+    for i in selection:
+        print(math.degrees(angle[i]))
 
-    x3 = BlueLed[0] - GreenLed[0]
+        B.append(Beacon_position[i])
 
-    y3 = BlueLed[1] - GreenLed[1]
+    print(angle)
+    x1 = B[1][0] - B[0][0] 
 
-    x2 = GreenLed[0]
+    y1 = B[1][1] - B[0][1]
 
-    y2 = GreenLed[1]
 
-    try:
-        t1 = 1/math.tan((angle[1] - angle[0] ))
+    x3 = B[2][0] - B[0][0]
 
-        t2 = 1/math.tan((angle[2] - angle[1] ))
-    except:
-        t1 = 1
-        t2 = 2
+    y3 = B[2][1] - B[0][1]
+
+    x2 = B[0][0]
+
+    y2 = B[0][1]
+
+
+    t1 = 1/math.tan((angle[selection[0]] - angle[selection[1]] ))
+
+    t2 = 1/math.tan((angle[selection[2]] - angle[selection[0]]  ))
 
     t3 = (1-t1*t2)/(t1+t2)
 
     x12 = x1 + t1*y1
     y12 = y1 - t1*x1
 
-    x23 = x3 + t2*y3
+    x23 = x3 - t2*y3
     y23 = y3+t2*x3
 
     x31 = (x3+x1) + t3*(y3 - y1)
@@ -182,44 +214,62 @@ def get_position(angle,RedLed,GreenLed,BlueLed):
     X =  x2 + (k31*(y12 - y23))/D
     Y = y2 + (k31*(x23 - x12))/D
 
-    theta = math.atan2(y2 - Y , x2 - X)  - (angle[1])
-    return X,Y , theta
-
-
+    theta = math.atan2(y2 - Y , x2 - X)  - (angle[selection[0]])
+    return X,Y , math.degrees(theta)
 
 
 def beacon_main():
     #Grey Line is front of the robot
     #Green LED is the reference
     
-
-    
     camera = PiCamera()
-    camera.shutter_speed = 8000
-    camera.capture('image_beacon.jpg')
-    raw_image = cv2.imread('image_beacon.jpg')
-
+    camera.resolution = (1920 ,1080)
+    camera.shutter_speed = 5000
+    camera.capture('photo_beacon.jpg')
+    #Led positions 
     camera.close()
+    
+    
+    raw_image = cv2.imread('photo_beacon.jpg')
+
     raw_image  = cv2.flip( raw_image, 1 )
+
+
+     
+    height,width,depth = raw_image.shape
+    circle_img  = np.zeros((height,width), np.uint8)
     
-    channel,img = extract_channel(raw_image)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),400,(255,255,255),thickness=-1)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),275,(0,0,0),thickness=-1)
+    imask = circle_img>0
+    picture = np.zeros_like(raw_image, np.uint8)
+    picture[imask] = raw_image[imask]
+    
 
     
+    channel,img = extract_channel(picture)
 
-    center_position, r_img = center(channel,raw_image,center_cone_x,center_cone_y)
-   
-    if center_position == None:
+    selection = channel_selection(channel)
+    if len(selection) < 3:
         return None
-    angle = get_angles(center_position,center_cone_x,center_cone_y )
-    cv2.imwrite('angle.jpg',r_img)
+
+    position , img = center(selection,channel,img,center_cone_x,center_cone_y)
+    
+    print(position)
+
+    #display(channel,position,img,center_cone_x,center_cone_y , selection)
+   
+
+    angle = get_angles(selection, position,center_cone_x,center_cone_y )
     
 
-    return get_position(angle,RedLed,GreenLed,BlueLed)
+
+    
+    return (get_position(selection,angle,[YellowLed,RedLed,GreenLed,BlueLed]))
 
 
 
 
-#print(beacon_main())
 
 
     
