@@ -1,24 +1,24 @@
-
-from picamera import PiCamera
 import cv2
 import numpy as np
 import math
+from picamera import PiCamera
 
-center_cone_x = 975#960
-center_cone_y = 600
-RedLed = (0,8000)
-GreenLed = (8000,8000)
-BlueLed = (8000,0)
+center_cone_x = 983#981
+center_cone_y = 596#597 
+RedLed = (0,8040)
+GreenLed = (8040,8040)
+BlueLed = (8040,0)
 YellowLed = (0,0)
 
-g_low = (30, 80, 75)
-g_high = (40, 255,255)
+
+g_low = (25, 100, 110)
+g_high = (35, 255,255)
 b_low = (10, 125, 125)
-b_high = (20, 255,255)
+b_high = (15, 255,255)
 r_low = (110, 100, 100)
 r_high = (130, 255,255)
 
-y_low = (70,40, 120)
+y_low = (60,50, 50)
 y_high = (90, 255,255)
 
 
@@ -35,7 +35,7 @@ def center(selection,channel,img,center_cone_x,center_cone_y):
 
         
         # find contours in the binary image
-        contours, hierarchy = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         c = contours[0]
         # calculate moments for each contour
         M = cv2.moments(c)
@@ -104,7 +104,7 @@ def extract_channel(img):
 
 
 
-def channel_selection(channel):
+def channel_selection(channel,r):
     color = [(0,255,255),(255,0,0,),(0,255,0),(0,0,255)]
     selection = []
     position = []
@@ -119,10 +119,14 @@ def channel_selection(channel):
             position = ((non_zero[1][l],non_zero[0][l]))
         
         
-        
+    print(selection)    
     if len(selection) == 4 :
-        selection.remove(2)
-
+        try:
+            print("Remove value")
+            selection.remove(r)
+        except:
+            pass
+    print(selection)
     return selection #, position
 
 
@@ -137,7 +141,7 @@ def get_angles(selection, center_position,center_cone_x,center_cone_y ):
     angle = [0,0,0,0]
     
     ref_vector = (200,0) 
-    print(center_position)
+    
     ref_norm = math.sqrt(ref_vector[0]*ref_vector[0] + ref_vector[1]*ref_vector[1])
     for i in selection:
 
@@ -171,11 +175,12 @@ def get_position(selection,angle,Beacon_position):
     
 
     for i in selection:
-        print(math.degrees(angle[i]))
+        
 
         B.append(Beacon_position[i])
 
-    print(angle)
+    
+    
     x1 = B[1][0] - B[0][0] 
 
     y1 = B[1][1] - B[0][1]
@@ -218,17 +223,19 @@ def get_position(selection,angle,Beacon_position):
     return X,Y , math.degrees(theta)
 
 
-def beacon_main():
+def beacon_main(r):
     #Grey Line is front of the robot
     #Green LED is the reference
+
     
-    camera = PiCamera()
-    camera.resolution = (1920 ,1080)
-    camera.shutter_speed = 5000
-    camera.capture('photo_beacon.jpg')
+    
+
     #Led positions 
-    camera.close()
-    
+    cam = PiCamera()
+    cam.resolution = (1920,1080)
+    cam.shutter_speed = 4000
+    cam.capture('photo_beacon.jpg')
+    cam.close()
     
     raw_image = cv2.imread('photo_beacon.jpg')
 
@@ -239,8 +246,8 @@ def beacon_main():
     height,width,depth = raw_image.shape
     circle_img  = np.zeros((height,width), np.uint8)
     
-    cv2.circle(circle_img,(center_cone_x,center_cone_y),400,(255,255,255),thickness=-1)
-    cv2.circle(circle_img,(center_cone_x,center_cone_y),275,(0,0,0),thickness=-1)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),135,(255,255,255),thickness=-1)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),105,(0,0,0),thickness=-1)
     imask = circle_img>0
     picture = np.zeros_like(raw_image, np.uint8)
     picture[imask] = raw_image[imask]
@@ -249,16 +256,16 @@ def beacon_main():
     
     channel,img = extract_channel(picture)
 
-    selection = channel_selection(channel)
+    selection = channel_selection(channel,r)
+    print(selection)
     if len(selection) < 3:
         return None
 
-    position , img = center(selection,channel,img,center_cone_x,center_cone_y)
+    position , img = center(selection,channel,raw_image,center_cone_x,center_cone_y)
     
-    print(position)
 
     #display(channel,position,img,center_cone_x,center_cone_y , selection)
-   
+    cv2.imwrite('photo_beacon_post.jpg', img)
 
     angle = get_angles(selection, position,center_cone_x,center_cone_y )
     
