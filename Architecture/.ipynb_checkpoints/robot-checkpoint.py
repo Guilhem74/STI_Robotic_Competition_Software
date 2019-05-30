@@ -45,10 +45,8 @@ class robot:
                            'h':[186/10,95.8,20,self.ir_range],
                            'i':[369/10,-31.91,-130,self.ir_range],
                            'j':[369/10,31.91,130,self.ir_range],
-                           #'k':[333/10,7,55,self.ir_range_back],
-                           #'l':[333/10,-7,-55,self.ir_range_back],
-                           'k':[340/10,0,0,self.ir_range],
-                           'l':[340/10,0,0,self.ir_range],
+                           'k':[333/10,7,55,self.ir_range],
+                           'l':[333/10,-7,-55,self.ir_range],
                            'm':[340/10,0,0,self.ir_range],}
         
                            
@@ -154,6 +152,7 @@ class robot:
     def Free_Space_Around(self,Sensor_State, Map_State):
             
         #Get information from sensor and map
+        print(Map_State)
         Space_Free = {'Front':1,'Left':1,'Right':1,'Back':1 ,'FrontLeft':1,'FrontRight':1, 'BackLeft':1, 'BackRight':1, }
         if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m'] or Map_State["Front"] ):
             Space_Free['Front']=0;

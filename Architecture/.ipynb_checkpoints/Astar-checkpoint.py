@@ -3,137 +3,79 @@ import numpy as np
 import math
 import time
 
+
+
+
+def get_path(grid,coord,robot_pos):
+    x_r, y_r, angle_r = robot_pos
+    x_c , y_c = coord
+    
+    
+    theta = math.atan2(y_c - y_r , x_c - y_r) - math.radians(angle_r)
+    distance = math.sqrt(( (x_c - x_r )*(x_c - x_r )+ (y_c - y_r)*(y_c - y_r) ))
+    
+    _ , path_coord = get_map_information(robot_pos,grid,math.degrees(theta), distance)
+    return path_coord
+
+
 def get_segment(coord,grid,orientation,dist_max):
     
     
 
-    x = coord[0]
-    y = coord[1]
-    
+    x = round(coord[0])
+    y = round(coord[1])
+    path_coord = []
     detection_line = []
     for d in range(dist_max):
         
-        detection_line.append(grid[y +orientation[1]* d ,x  + orientation[0]*  d])
         
-    return detection_line
+        detection_line.append(grid[y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
+        path_coord.append([y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
+    return detection_line , path_coord
+
+def get_map_information(robot_pos,grid,theta, distance_detection):
+    theta = math.radians(theta)
     
-def  get_map_information(robot_pos,grid,theta):
-    distance_back = 7
-    distance_front =33
     distance = 20
     x_r = int(round(robot_pos[0]/10))
     y_r = int(round(robot_pos[1]/10))
+    path_coord = np.array([[x_r,y_r]])
     list_maximum_lines = []
     orientation = (1,1)
-    dist_max_detection = 50
-    #UP
-    if(-22.5<theta<=22.5):
-        x0 = x_r + distance_front
-        x1 = x_r + distance_front
-        y0 = y_r
-        y1 = y_r
-        dx0 = 0
-        dy0 = 1
-        dx1 = 0
-        dy1 = -1
-        orientation = (1,0)
-        
-    #UPLeft
-    elif(22.5<theta<=67.5):
-        x0 = x_r + distance_front
-        x1 = x_r + distance_front
-        y0 = y_r + distance
-        y1 = y_r + distance
-        dx0 = -1
-        dy0 = 1
-        dx1 = 1
-        dy1 = -1
-        orientation = (1,1)
-    #Left
-    elif(67.5<theta<=90+22.5):
-        x0 = x_r + 13
-        x1 = x_r + 13
-        y0 = y_r + distance
-        y1 = y_r + distance
-        dx0 = -1
-        dy0 = 0
-        dx1 = 1
-        dy1 = 0
-        orientation = (0,1)
-    #DownLeft    
-    elif(90+22.5<theta<=180-22.5):
-        x0 = x_r - distance_back
-        x1 = x_r - distance_back
-        y0 = y_r + distance
-        y1 = y_r + distance
-        dx0 = -1
-        dy0 = -1
-        dx1 = 1
-        dy1 = 1
-        orientation = (-1,1)
-    #DOWN
-    elif(180-22.5<theta<=180+22.5):
-        x0 = x_r - distance_back
-        x1 = x_r - distance_back
-        y0 = y_r
-        y1 = y_r 
-        dx0 = 0
-        dy0 = -1
-        dx1 = 0
-        dy1 = 1
-        orientation = (-1,0)
-     #Down right   
-    elif(180+22.5<theta<=270-22.5):
-        x0 = x_r - distance_back
-        x1 = x_r - distance_back
-        y0 = y_r - distance
-        y1 = y_r - distance
-        dx0 = -1
-        dy0 = 1
-        dx1 = 1
-        dy1 = -1
-        orientation = (-1,-1)
-        
-        
-    elif(270-22.5<theta<=270+22.5):
-        x0 = x_r +13
-        x1 = x_r +13
-        y0 = y_r - distance
-        y1 = y_r - distance
-        dx0 = -1
-        dy0 = 0
-        dx1 = 1
-        dy1 = 0
-        orientation = (0,-1)
-    else:
-        x0 = x_r + distance_front
-        x1 = x_r + distance_front
-        y0 = y_r - distance
-        y1 = y_r - distance
-        dx0 = -1
-        dy0 = 1
-        dx1 = 1
-        dy1 = -1
-        orientation = (1,-1)
-        
-        
+    dist_max_detection = int(distance_detection/10)
+    x0 = x_r + distance*math.cos(theta)
+    x1 = x_r + distance*math.cos(theta)
+    y0 = y_r + distance*math.sin(theta)
+    y1 = y_r + distance*math.sin(theta)
+    dx0 = math.cos(theta+(math.pi)/2)    
+    dy0 = math.sin(theta+(math.pi)/2)
+    dx1 = math.cos(theta-(math.pi)/2)
+    dy1 = math.sin(theta-(math.pi)/2)
+    orientation = (math.cos(theta),math.sin(theta))
     for i in range(distance-1):
-        if(x0>0 and x0<7999 and y0>0 and y0<7999):
-            list_maximum_lines.append(max(
-                get_segment([x0,y0],grid,orientation,dist_max_detection)))
+        if(x0>0 and x0<799 and y0>0 and y0<799):
+            result0 , path_coord0 = get_segment([x0,y0],grid,orientation,dist_max_detection)
+            list_maximum_lines.append(max(result0))
         else:
             list_maximum_lines.append(255)
                 
-        if(x1>0 and x1<7999 and y1>0 and y1<7999):
-            list_maximum_lines.append(max(
-                get_segment([x1,y1],grid,orientation,dist_max_detection)))
+        if(x1>0 and x1<799 and y1>0 and y1<799):
+            result1 , path_coord1 = get_segment([x1,y1],grid,orientation,dist_max_detection)
+            list_maximum_lines.append(max(result1))
         else:
                 list_maximum_lines.append(255)
-                
+        path_coord=np.insert(path_coord,0,np.array(path_coord0),axis=0)
+        path_coord=np.insert(path_coord,0,np.array(path_coord1),axis=0)
         x0 = x0 + dx0
         x1 = x1 + dx1
         y0 = y0 + dy0
         y1 = y1 + dy1
+    
+        
+        
+    return max(list_maximum_lines), path_coord
+        
+
         
         
         
@@ -142,14 +84,22 @@ def  get_map_information(robot_pos,grid,theta):
         
         
 def get_obstacle_robot(robot_position,grid_updated):
-    obstacle_robot = {"Front" :get_map_information(robot_position,grid_updated,0),
-                              "FrontLeft": get_map_information(robot_position,grid_updated,45),
-                              "Left": get_map_information(robot_position,grid_updated,90),
-                              "BackLeft": get_map_information(robot_position,grid_updated,135),
-                              "Back": get_map_information(robot_position,grid_updated,180),
-                              "BackRigth": get_map_information(robot_position,grid_updated,180+45),
-                              "Right": get_map_information(robot_position,grid_updated,270),
-                              "FrontRight": get_map_information(robot_position,grid_updated,270+45),
+    f , _ = get_map_information(robot_position,grid_updated,0,1000)
+    fl , _ =get_map_information(robot_position,grid_updated,45,1000)
+    l , _ =get_map_information(robot_position,grid_updated,90,500)
+    bl , _ =get_map_information(robot_position,grid_updated,135,1000)
+    b , _ =get_map_information(robot_position,grid_updated,180,1000)
+    br , _ =get_map_information(robot_position,grid_updated,180+45,1000)
+    r , _ =get_map_information(robot_position,grid_updated,270,1000)
+    fr , _ =get_map_information(robot_position,grid_updated,270+45,1000)
+    obstacle_robot = {"Front" :f,
+                              "FrontLeft":fl ,
+                              "Left":l,
+                              "BackLeft":bl ,
+                              "Back": b,
+                              "BackRigth": br,
+                              "Right": r,
+                              "FrontRight":fr ,
                              }
     return obstacle_robot
     

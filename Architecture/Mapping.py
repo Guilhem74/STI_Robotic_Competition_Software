@@ -19,12 +19,12 @@ class Mapping:
     self.H = 16*self.resolution
     self.W = 16*self.resolution
     self.walls = []
-    self.obstacle_size = 30
+    self.obstacle_size = 15
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.zeros((self.H,self.W), dtype=int)
     self.grid_reward = np.zeros((self.H,self.W), dtype=int)
-    #self.build_map(0)
+    self.build_map(0)
 
 
 
@@ -34,8 +34,8 @@ class Mapping:
     zone = np.ones((6*self.resolution,6*self.resolution))*255
     if(num == 0):
         self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
-        self.grid[:6*self.resolution,800-6*self.resolution:800] = zone
-        self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
+        #self.grid[:6*self.resolution,800-6*self.resolution:800] = zone
+        #self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
     if(num == 1):
         self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
         self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
@@ -51,20 +51,21 @@ class Mapping:
 
 
 
-  def display(self,G,path,robot,checkpoint):
+  def display(self,path,robot,Set_Coordinate):
+    
     A = np.zeros((self.H,self.W,3))    
     A[:,:,0] = self.grid[:,:]
-    if G!= None:
-        for coord in G:
-          A[coord[0],coord[1],1] = G[coord[0],coord[1]]
-    if path!= None:
+    for i in Set_Coordinate:
+        A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] = A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] + 255
+        A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] = A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,2] + 255
+    if path!= []:
         for coord in path:
-          A[coord[1],coord[0],1] = 255
+          A[coord[1],coord[0],1] = A[coord[1],coord[0],2] + 255
+          A[coord[1],coord[0],1] = A[coord[1],coord[0],0] + 255
     Robot_Array=self.Get_Display_Pos_Robot(robot)
     A[:,:,0]=A[:,:,0] + self.grid_reward[:,:]
     A[:,:,1]=A[:,:,1] + self.grid_reward[:,:]
-    for c in checkpoint:
-        A[int(c[1]/10),int(c[0]/10)] = A[int(c[1]/10),int(c[0]/10)] +  [255,255,255] 
+    
     A[:,:,2]= A[:,:,2] + Robot_Array
     A[:,:,0]=A[:,:,0]/max(1,np.max(A[:,:,0]))
     A[:,:,1]=A[:,:,1]/max(1,np.max(A[:,:,1]))
@@ -72,7 +73,7 @@ class Mapping:
     
     plt.figure(figsize=(20,20))
     plt.imshow(A,origin='lower')
-    plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
+    #plt.axis([max(0,robot.x-200),min(800,robot.x+200),max(0,robot.y-200),min(800,robot.y+200)])
     
     
   def Get_Display_Pos_Robot(self,robot):
