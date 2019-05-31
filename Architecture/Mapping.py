@@ -142,6 +142,7 @@ class Mapping:
   def new_bottle(self, xy):
         for bottle in xy:
             coord = make_tuple(bottle)
+            self.bottle.append(coord)
             for i in range(coord[0] - self.bottle_size ,coord[0] + self.bottle_size ):
                 for j in range(coord[1] - self.bottle_size ,coord[1] + self.bottle_size ):
                     self.grid_reward[j,i] = 255
@@ -160,7 +161,11 @@ class Mapping:
         return self.grid
 
 
-    
+  def dotproduct(self,v1, v2):
+        return sum((a*b) for a, b in zip(v1, v2))
+
+  def length(self,v):
+        return math.sqrt(self.dotproduct(v, v))  
   
   def Is_Position_Free(self,coord,dist):
         
@@ -178,7 +183,22 @@ class Mapping:
             return False
 
 
-
+  def get_nearest_bottle(self,robot_pos):
+    Distance_robot_to_bottle = []
+    X_robot, Y_robot,A_robot = robot_pos
+    
+    if (len(self.bottle)) >0:
+        for coord in self.bottle:
+            Distance_robot_to_bottle.append(self.length([coord[0] - X_robot , coord[1] - Y_robot ]))
+        index = Distance_robot_to_bottle.index(min(Distance_robot_to_bottle))  
+        ret = self.bottle[index][0]*10 , self.bottle[index][1] * 10
+        self.bottle.pop(index)
+        return ret 
+    else:
+        return None, None
+        
+    
+    
   
   def map(self):
     return(self.grid)

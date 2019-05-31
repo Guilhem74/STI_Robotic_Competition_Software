@@ -107,6 +107,7 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
     for i in range(distance-1):
         if(x0>0 and x0<799 and y0>0 and y0<799):
             result0 , path_coord0 = get_segment([x0,y0],grid,orientation,dist_max_detection)
+            path_coord=np.insert(path_coord,0,np.array(path_coord0),axis=0)
             if(len(result0) >0):
                 list_maximum_lines.append(max(result0))
         else:
@@ -114,12 +115,13 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
                 
         if(x1>0 and x1<799 and y1>0 and y1<799):
             result1 , path_coord1 = get_segment([x1,y1],grid,orientation,dist_max_detection)
+            path_coord=np.insert(path_coord,0,np.array(path_coord1),axis=0)
             if(len(result1) >0):
                 list_maximum_lines.append(max(result1))
         else:
                 list_maximum_lines.append(255)
-        path_coord=np.insert(path_coord,0,np.array(path_coord0),axis=0)
-        path_coord=np.insert(path_coord,0,np.array(path_coord1),axis=0)
+        
+        
         x0 = x0 + dx0
         x1 = x1 + dx1
         y0 = y0 + dy0

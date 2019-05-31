@@ -1,6 +1,7 @@
 import socket, select
+
 def enable_tcp_com(BUFFER_SIZE):
-    TCP_IP = '192.168.0.21' 
+    TCP_IP = '192.168.43.58' 
     TCP_PORT = 5005
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

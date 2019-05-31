@@ -11,14 +11,14 @@ BlueLed = (8040,0)
 YellowLed = (0,0)
 
 
-g_low = (25, 100, 110)
+g_low = (30, 100, 110)
 g_high = (35, 255,255)
 b_low = (10, 125, 125)
 b_high = (15, 255,255)
 r_low = (110, 100, 100)
 r_high = (130, 255,255)
 
-y_low = (60,50, 50)
+y_low = (50,40, 40)
 y_high = (90, 255,255)
 
 
@@ -223,12 +223,13 @@ def get_position(selection,angle,Beacon_position):
     return X,Y , math.degrees(theta)
 
 
-def beacon_main(r):
+def beacon_main():
     #Grey Line is front of the robot
     #Green LED is the reference
 
     
-    
+    Computed_position = []
+    Valid_position = []
 
     #Led positions 
     cam = PiCamera()
@@ -255,25 +256,34 @@ def beacon_main(r):
 
     
     channel,img = extract_channel(picture)
-
-    selection = channel_selection(channel,r)
-    print(selection)
-    if len(selection) < 3:
-        return None
-
-    position , img = center(selection,channel,raw_image,center_cone_x,center_cone_y)
+    for i in range(3):
+        selection = channel_selection(channel,i)
     
+        if len(selection) < 3:
+            print("Not enought light source")
+            Computed_position.append([-8000,-8000,0])
+        else:
 
-    #display(channel,position,img,center_cone_x,center_cone_y , selection)
-    cv2.imwrite('photo_beacon_post.jpg', img)
+            position , img = center(selection,channel,raw_image,center_cone_x,center_cone_y)
 
-    angle = get_angles(selection, position,center_cone_x,center_cone_y )
+
+            #display(channel,position,img,center_cone_x,center_cone_y , selection)
+            cv2.imwrite('photo_beacon_post.jpg', img)
+
+            angle = get_angles(selection, position,center_cone_x,center_cone_y )
+            X ,Y ,A = get_position(selection,angle,[YellowLed,RedLed,GreenLed,BlueLed])
+            Computed_position.append([X,Y,A])
     
-
-
+            for i in Computed_position:
+                if ( i[0]>0 and i[0]< 7999 and i[1]>0 and i[1] <7999):
+                    Valid_position.append(i)
+                
+                    
+                    
+                    
+    #ret = 
     
-    return (get_position(selection,angle,[YellowLed,RedLed,GreenLed,BlueLed]))
-
+    return np.median(Valid_position,axis =0)
 
 
 

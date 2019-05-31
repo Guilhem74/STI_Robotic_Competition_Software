@@ -2,7 +2,7 @@
 import numpy as np
 import math
 
-#import beacon as Beacon
+import beacon as Beacon
 class robot:
     def __init__(self,x,y,a):
         self.x = int(round(x/10))
