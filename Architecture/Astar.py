@@ -3,19 +3,71 @@ import numpy as np
 import math
 import time
 
+def dotproduct(v1, v2):
+        return sum((a*b) for a, b in zip(v1, v2))
 
-
+def length(v):
+        return math.sqrt(dotproduct(v, v))
+    
+def find_path(grid,coord_objective,robot_pos):
+    
+    #Search a new checkpoint between X_robot and X_objective 
+    #If there are not : Search a new checkpoint between Y_robot and Y_objective 
+    X_objective , Y_objective = coord_objective
+    X_robot , Y_robot, Angle_robot = robot_pos
+    dist = length([X_objective - X_robot,Y_objective - Y_robot])
+    #Find on X
+    
+    if X_objective > X_robot:
+        incrementX = -100
+    else:
+        incrementX = 100
+        
+    if Y_objective > Y_robot:
+        incrementY = -100
+    else:
+        incrementY = 100
+        
+        
+    for x_temp in range(int(X_objective),int(X_robot),incrementX):
+        
+        value, path_coord = get_path(grid,[x_temp,Y_objective],robot_pos)
+        
+        if(value):
+            pass
+        else:
+            if (len(path_coord)> 20):
+                
+                return [x_temp,Y_objective,0] , path_coord
+    
+    
+    for y_temp in range(int(Y_objective),int(Y_robot),incrementY):
+        value, path_coord = get_path(grid,[X_objective,y_temp],robot_pos)
+        if(value):
+            pass
+        else:
+            if (len(path_coord)> 20):
+                return [X_objective,y_temp,0] , path_coord
+        
+        
+        
+        
+        
 
 def get_path(grid,coord,robot_pos):
     x_r, y_r, angle_r = robot_pos
     x_c , y_c = coord
     
     
-    theta = math.atan2(y_c - y_r , x_c - y_r) - math.radians(angle_r)
+    theta = math.atan2(y_c - y_r , x_c - x_r) - math.radians(angle_r)
     distance = math.sqrt(( (x_c - x_r )*(x_c - x_r )+ (y_c - y_r)*(y_c - y_r) ))
     
-    _ , path_coord = get_map_information(robot_pos,grid,math.degrees(theta), distance)
-    return path_coord
+    value , path_coord = get_map_information(robot_pos,grid,math.degrees(theta), distance)
+    if(len(path_coord)==0):
+        path_coord.append([int(round(robot_pos[0]/10)) , int(round(robot_pos[1]/10))])
+        
+        
+    return value, path_coord
 
 
 def get_segment(coord,grid,orientation,dist_max):
@@ -30,7 +82,7 @@ def get_segment(coord,grid,orientation,dist_max):
         
         
         detection_line.append(grid[y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
-        path_coord.append([y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
+        path_coord.append( [x  +round( orientation[0]*  d),y +round(orientation[1]* d)])
     return detection_line , path_coord
 
 def get_map_information(robot_pos,grid,theta, distance_detection):
@@ -55,13 +107,15 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
     for i in range(distance-1):
         if(x0>0 and x0<799 and y0>0 and y0<799):
             result0 , path_coord0 = get_segment([x0,y0],grid,orientation,dist_max_detection)
-            list_maximum_lines.append(max(result0))
+            if(len(result0) >0):
+                list_maximum_lines.append(max(result0))
         else:
             list_maximum_lines.append(255)
                 
         if(x1>0 and x1<799 and y1>0 and y1<799):
             result1 , path_coord1 = get_segment([x1,y1],grid,orientation,dist_max_detection)
-            list_maximum_lines.append(max(result1))
+            if(len(result1) >0):
+                list_maximum_lines.append(max(result1))
         else:
                 list_maximum_lines.append(255)
         path_coord=np.insert(path_coord,0,np.array(path_coord0),axis=0)

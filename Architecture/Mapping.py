@@ -57,11 +57,11 @@ class Mapping:
     A[:,:,0] = self.grid[:,:]
     for i in Set_Coordinate:
         A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] = A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] + 255
-        A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,1] = A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,2] + 255
+        A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,2] = A[int(i[1]/10)-5:int(i[1]/10)+5,int(i[0]/10)-5:int(i[0]/10)+5,2] + 255
     if path!= []:
         for coord in path:
-          A[coord[1],coord[0],1] = A[coord[1],coord[0],2] + 255
-          A[coord[1],coord[0],1] = A[coord[1],coord[0],0] + 255
+          A[coord[1],coord[0],2] = 255
+          A[coord[1],coord[0],0] = 255
     Robot_Array=self.Get_Display_Pos_Robot(robot)
     A[:,:,0]=A[:,:,0] + self.grid_reward[:,:]
     A[:,:,1]=A[:,:,1] + self.grid_reward[:,:]
