@@ -3,8 +3,9 @@ import numpy as np
 import math
 from picamera import PiCamera
 
-center_cone_x = 983#981
-center_cone_y = 596#597 
+center_cone_x = 975#981center_cone_x = 975#981
+center_cone_y = 641#597 
+
 RedLed = (0,8040)
 GreenLed = (8040,8040)
 BlueLed = (8040,0)
@@ -18,7 +19,7 @@ b_high = (15, 255,255)
 r_low = (110, 100, 100)
 r_high = (130, 255,255)
 
-y_low = (50,40, 40)
+y_low = (70,40, 40)
 y_high = (90, 255,255)
 
 

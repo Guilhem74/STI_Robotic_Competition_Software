@@ -32,7 +32,7 @@ def find_path(grid,coord_objective,robot_pos):
         
             
     else:
-        return [[X_objective,Y_objective,0]]
+        return None
         
     
         

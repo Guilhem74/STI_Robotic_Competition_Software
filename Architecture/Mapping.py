@@ -23,7 +23,6 @@ class Mapping:
     self.bottle_size = 5
     #self.data = np.zeros((self.H, self.W,3), dtype=np.uint8)
     self.grid = np.zeros((self.H,self.W), dtype=int)
-    self.grid_reward = np.zeros((self.H,self.W), dtype=int)
     self.build_map(0)
 
 
@@ -63,8 +62,16 @@ class Mapping:
           A[coord[1],coord[0],2] = 255
           A[coord[1],coord[0],0] = 255
     Robot_Array=self.Get_Display_Pos_Robot(robot)
-    A[:,:,0]=A[:,:,0] + self.grid_reward[:,:]
-    A[:,:,1]=A[:,:,1] + self.grid_reward[:,:]
+    grid_reward = np.zeros((self.H,self.W), dtype=int)
+    print("Display funct; self.bottle= ", self.bottle)
+    for bottle in self.bottle:
+        print("bottle : ", bottle)
+        for i in range(bottle[0] - self.bottle_size ,bottle[0] + self.bottle_size ):
+            for j in range(bottle[1] - self.bottle_size ,bottle[1] + self.bottle_size ):
+                grid_reward[j,i] = 255
+     
+    A[:,:,0]=A[:,:,0] + grid_reward[:,:]
+    A[:,:,1]=A[:,:,1] + grid_reward[:,:]
     
     A[:,:,2]= A[:,:,2] + Robot_Array
     A[:,:,0]=A[:,:,0]/max(1,np.max(A[:,:,0]))
@@ -143,9 +150,7 @@ class Mapping:
         for bottle in xy:
             coord = make_tuple(bottle)
             self.bottle.append(coord)
-            for i in range(coord[0] - self.bottle_size ,coord[0] + self.bottle_size ):
-                for j in range(coord[1] - self.bottle_size ,coord[1] + self.bottle_size ):
-                    self.grid_reward[j,i] = 255
+            
          
 
 
@@ -209,11 +214,11 @@ class Mapping:
     self.bottle = []
     self.grid_reward[:,:] = 0
   def clean_bottle_list(self,robot_pos):
-    distance = 25
+    # WARNNG CM
+    distance = 75
     X_robot, Y_robot,A_robot = robot_pos
     
-    self.bottle = list(filter(lambda x: math.sqrt(abs(X_robot - x[0])*abs(X_robot - x[0]) + abs(Y_robot-x[1])*abs(Y_robot-x[1]))  > distance, self.bottle))
-    self.grid_reward[Y_robot-distance:Y_robot+distance,X_robot-distance:X_robot+distance] = 0
+    self.bottle = list(filter(lambda x: math.sqrt(abs(X_robot/10 - x[0])*abs(X_robot/10 - x[0]) + abs(Y_robot/10-x[1])*abs(Y_robot/10-x[1])) > distance, self.bottle))
 
     
     

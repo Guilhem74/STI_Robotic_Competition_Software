@@ -135,7 +135,7 @@ class robot:
 
                 xi = self.ir_sensors[i][0] + self.x
                 yi = self.ir_sensors[i][1] + self.y
-                obstacle_position.append([xi,yi])
+                #obstacle_position.append([xi,yi])
                 
         return obstacle_position
     def get_sensor_state(self):
