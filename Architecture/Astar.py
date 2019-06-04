@@ -10,44 +10,32 @@ def length(v):
         return math.sqrt(dotproduct(v, v))
     
 def find_path(grid,coord_objective,robot_pos):
-    
     #Search a new checkpoint between X_robot and X_objective 
     #If there are not : Search a new checkpoint between Y_robot and Y_objective 
-    X_objective , Y_objective = coord_objective
+    X_objective , Y_objective ,_ = coord_objective
     X_robot , Y_robot, Angle_robot = robot_pos
     dist = length([X_objective - X_robot,Y_objective - Y_robot])
-    #Find on X
+    if( Y_objective > 5000 and X_objective < 5000 ) :
+        
+        #Check if obj go through zone
+
+        #value, path_coord = get_path(grid,[X_objective,Y_objective],robot_pos)
+        
+        return [[X_objective,Y_robot,0]]
+
+            
+    elif( Y_robot > 5000 and X_robot < 5000 ):
     
-    if X_objective > X_robot:
-        incrementX = -100
+        #value, path_coord = get_path(grid,[X_objective,Y_objective],robot_pos)
+        
+        return [[X_robot,Y_objective,0]]
+        
+            
     else:
-        incrementX = 100
+        return [[X_objective,Y_objective,0]]
         
-    if Y_objective > Y_robot:
-        incrementY = -100
-    else:
-        incrementY = 100
-        
-        
-    for x_temp in range(int(X_objective),int(X_robot),incrementX):
-        
-        value, path_coord = get_path(grid,[x_temp,Y_objective],robot_pos)
-        
-        if(value):
-            pass
-        else:
-            if (len(path_coord)> 20):
-                
-                return [x_temp,Y_objective,0] , path_coord
     
-    
-    for y_temp in range(int(Y_objective),int(Y_robot),incrementY):
-        value, path_coord = get_path(grid,[X_objective,y_temp],robot_pos)
-        if(value):
-            pass
-        else:
-            if (len(path_coord)> 20):
-                return [X_objective,y_temp,0] , path_coord
+        
         
         
         
@@ -76,13 +64,14 @@ def get_segment(coord,grid,orientation,dist_max):
 
     x = round(coord[0])
     y = round(coord[1])
-    path_coord = []
+    path_coord = [[0,0]]
     detection_line = []
     for d in range(dist_max):
         
-        
-        detection_line.append(grid[y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
-        path_coord.append( [x  +round( orientation[0]*  d),y +round(orientation[1]* d)])
+        if( y +round(orientation[1]* d) >0 and y +round(orientation[1]* d) < 799 
+          and 0 +round(orientation[0]* d) >0 and 0 +round(orientation[0]* d)< 799):
+            detection_line.append(grid[y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
+            path_coord.append( [x  +round( orientation[0]*  d),y +round(orientation[1]* d)])
     return detection_line , path_coord
 
 def get_map_information(robot_pos,grid,theta, distance_detection):
@@ -92,7 +81,7 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
     x_r = int(round(robot_pos[0]/10))
     y_r = int(round(robot_pos[1]/10))
     path_coord = np.array([[x_r,y_r]])
-    list_maximum_lines = []
+    list_maximum_lines = [0]
     orientation = (1,1)
     dist_max_detection = int(distance_detection/10)
     x0 = x_r + distance*math.cos(theta)
@@ -142,7 +131,7 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
 def get_obstacle_robot(robot_position,grid_updated):
     f , _ = get_map_information(robot_position,grid_updated,0,1000)
     fl , _ =get_map_information(robot_position,grid_updated,45,1000)
-    l , _ =get_map_information(robot_position,grid_updated,90,500)
+    l , _ =get_map_information(robot_position,grid_updated,90,1000)
     bl , _ =get_map_information(robot_position,grid_updated,135,1000)
     b , _ =get_map_information(robot_position,grid_updated,180,1000)
     br , _ =get_map_information(robot_position,grid_updated,180+45,1000)

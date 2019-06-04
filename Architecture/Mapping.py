@@ -185,18 +185,37 @@ class Mapping:
 
   def get_nearest_bottle(self,robot_pos):
     Distance_robot_to_bottle = []
-    X_robot, Y_robot,A_robot = robot_pos
+    X_robot= robot_pos[0]/10
+    Y_robot= robot_pos[1]/10
+    A_robot = robot_pos[2]
+    print(robot_pos)
     
     if (len(self.bottle)) >0:
         for coord in self.bottle:
-            Distance_robot_to_bottle.append(self.length([coord[0] - X_robot , coord[1] - Y_robot ]))
+            dist = self.length([coord[0] - X_robot , coord[1] - Y_robot ])
+            if dist < 50:
+                dist = 1000
+            Distance_robot_to_bottle.append(dist)
+        
         index = Distance_robot_to_bottle.index(min(Distance_robot_to_bottle))  
         ret = self.bottle[index][0]*10 , self.bottle[index][1] * 10
-        self.bottle.pop(index)
+        if np.mean(Distance_robot_to_bottle) == 1000:
+            return None,None
         return ret 
     else:
         return None, None
         
+  def clean_all_bottle_list(self):
+    self.bottle = []
+    self.grid_reward[:,:] = 0
+  def clean_bottle_list(self,robot_pos):
+    distance = 25
+    X_robot, Y_robot,A_robot = robot_pos
+    
+    self.bottle = list(filter(lambda x: math.sqrt(abs(X_robot - x[0])*abs(X_robot - x[0]) + abs(Y_robot-x[1])*abs(Y_robot-x[1]))  > distance, self.bottle))
+    self.grid_reward[Y_robot-distance:Y_robot+distance,X_robot-distance:X_robot+distance] = 0
+
+    
     
     
   
