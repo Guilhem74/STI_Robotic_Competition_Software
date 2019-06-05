@@ -32,7 +32,7 @@ class Mapping:
     self.grid[:, [0,-1]] = 255
     zone = np.ones((6*self.resolution,6*self.resolution))*255
     if(num == 0):
-        self.grid[800-6*self.resolution:800,:6*self.resolution] = zone
+        self.grid[800-8*self.resolution:800,:8*self.resolution] = 255
         #self.grid[:6*self.resolution,800-6*self.resolution:800] = zone
         #self.grid[800-6*self.resolution:800,800-6*self.resolution:800] = zone
     if(num == 1):
@@ -212,7 +212,7 @@ class Mapping:
         
   def clean_all_bottle_list(self):
     self.bottle = []
-    self.grid_reward[:,:] = 0
+
   def clean_bottle_list(self,robot_pos):
     # WARNNG CM
     distance = 75

@@ -112,7 +112,13 @@ class robot:
 
 
     def get_beacon_position(self):
-        return Beacon.beacon_main()
+        Beacon_pos = Beacon.beacon_main()
+        if len(Beacon_pos)>0:
+            return Beacon_pos
+        else:
+            print('Beacon not working');
+            return self.get_position()
+         
 
     
 
@@ -149,7 +155,7 @@ class robot:
         if(math.sqrt(Distance_X*Distance_X+Distance_Y*Distance_Y)<200):
             return True
         return False
-    def Free_Space_Around2(self,Sensor_State, Map_State):
+    def Free_Space_Around(self,Sensor_State, Map_State):
             
         #Get information from sensor and map
         print(Map_State)
@@ -164,25 +170,7 @@ class robot:
             Space_Free['Right']=0;
            
         return Space_Free
-    
-    def Free_Space_Around(self,Sensor_State):
-            
-        #Get information from sensor and map
-        
-        Space_Free = {'Front':1,'Left':1,'Right':1,'Back':1 ,'FrontLeft':1,'FrontRight':1, 'BackLeft':1, 'BackRight':1, }
-        if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m']):
-            Space_Free['Front']=0;
-        if(Sensor_State['a'] or Sensor_State['b'] or Sensor_State['c'] or Sensor_State['d']):
-            Space_Free['Back']=0;
-        if(Sensor_State['h'] or Sensor_State['g'] or Sensor_State['j'] ):
-            Space_Free['Left']=0;
-        if(Sensor_State['e'] or Sensor_State['f'] or Sensor_State['i'] ):
-            Space_Free['Right']=0;
-           
-        return Space_Free
 
-    
-    
 
 
 

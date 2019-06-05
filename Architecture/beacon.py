@@ -3,24 +3,24 @@ import numpy as np
 import math
 from picamera import PiCamera
 
-center_cone_x = 975#981center_cone_x = 975#981
-center_cone_y = 641#597 
-
+center_cone_x = 973#981
+center_cone_y = 648#597 
 RedLed = (0,8040)
 GreenLed = (8040,8040)
 BlueLed = (8040,0)
 YellowLed = (0,0)
 
 
-g_low = (30, 100, 110)
-g_high = (35, 255,255)
-b_low = (10, 125, 125)
+g_low = (32, 110, 90)
+g_high = (43, 255,255)
+b_low = (10, 200, 75)
 b_high = (15, 255,255)
-r_low = (110, 100, 100)
+r_low = (115, 105, 50)
 r_high = (130, 255,255)
 
-y_low = (70,40, 40)
-y_high = (90, 255,255)
+
+y_low = (55,50, 50)
+y_high = (80, 255,255)
 
 
 def center(selection,channel,img,center_cone_x,center_cone_y):
@@ -36,7 +36,7 @@ def center(selection,channel,img,center_cone_x,center_cone_y):
         
         # find contours in the binary image
         _, contours, _ = cv2.findContours(gray_image,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        c = contours[0]
+        c = max(contours, key = cv2.contourArea)
         # calculate moments for each contour
         M = cv2.moments(c)
 
@@ -119,14 +119,11 @@ def channel_selection(channel,r):
             position = ((non_zero[1][l],non_zero[0][l]))
         
         
-    print(selection)    
     if len(selection) == 4 :
         try:
-            print("Remove value")
             selection.remove(r)
         except:
             pass
-    print(selection)
     return selection #, position
 
 
@@ -246,16 +243,16 @@ def beacon_main():
     height,width,depth = raw_image.shape
     circle_img  = np.zeros((height,width), np.uint8)
     
-    cv2.circle(circle_img,(center_cone_x,center_cone_y),135,(255,255,255),thickness=-1)
-    cv2.circle(circle_img,(center_cone_x,center_cone_y),105,(0,0,0),thickness=-1)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),132,(255,255,255),thickness=-1)
+    cv2.circle(circle_img,(center_cone_x,center_cone_y),95,(0,0,0),thickness=-1)
     imask = circle_img>0
     picture = np.zeros_like(raw_image, np.uint8)
     picture[imask] = raw_image[imask]
     
-
+    
     
     channel,img = extract_channel(picture)
-    for i in range(3):
+    for i in range(4):
         selection = channel_selection(channel,i)
     
         if len(selection) < 3:
@@ -266,22 +263,37 @@ def beacon_main():
 
 
             #display(channel,position,img,center_cone_x,center_cone_y , selection)
-            cv2.imwrite('photo_beacon_post.jpg', img)
+            
 
             angle = get_angles(selection, position,center_cone_x,center_cone_y )
             X ,Y ,A = get_position(selection,angle,[YellowLed,RedLed,GreenLed,BlueLed])
             Computed_position.append([X,Y,A])
     
-            for i in Computed_position:
-                if ( i[0]>0 and i[0]< 7999 and i[1]>0 and i[1] <7999):
-                    Valid_position.append(i)
+    for i in Computed_position:
+        if ( i[0]>0 and i[0]< 7999 and i[1]>0 and i[1] <7999):
+            Valid_position.append(i)
                 
                     
-                    
+    distance = []
+    
+    for i in range(len(Valid_position)):
+        dist = 0
+        for j in range(len(Valid_position)):
+            dist = dist +math.sqrt(abs(Valid_position[i][0] - Valid_position[j][0])*abs(Valid_position[i][0] - Valid_position[j][0])  + abs(Valid_position[i][1] - Valid_position[j][1])*abs(Valid_position[i][1] - Valid_position[j][1]))
+    
+        distance.append(dist)
+    if len(distance )>0:  
+        ret_index = np.argmin(distance)
+
+        #cv2.imwrite('photo_beacon_post.jpg', img)
+
+        return Valid_position[ret_index]
+    else:
+        return []
                     
 
     
-    return Valid_position
+
 
 
 
