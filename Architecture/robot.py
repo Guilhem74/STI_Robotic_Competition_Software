@@ -1,7 +1,7 @@
 
 import numpy as np
 import math
-
+from picamera import PiCamera
 import beacon as Beacon
 class robot:
     def __init__(self,x,y,a):
@@ -10,8 +10,9 @@ class robot:
         self.angle = math.radians(a)
         self.ir_range = 30
         self.ir_range_back = 43
-        
-        
+        self.cam = PiCamera()
+        self.cam.resolution = (1920,1080)
+        self.cam.shutter_speed = 4000
         self.size_front = 33
         self.size_back = 7
         self.size_side = 20
@@ -112,7 +113,7 @@ class robot:
 
 
     def get_beacon_position(self):
-        Beacon_pos = Beacon.beacon_main()
+        Beacon_pos = Beacon.beacon_main(self.cam)
         if len(Beacon_pos)>0:
             return Beacon_pos
         else:

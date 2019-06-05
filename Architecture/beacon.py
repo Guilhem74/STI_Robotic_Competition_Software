@@ -23,13 +23,13 @@ y_low = (55,50, 50)
 y_high = (80, 255,255)
 
 
-def center(selection,channel,img,center_cone_x,center_cone_y):
+def center(selection,channel,center_cone_x,center_cone_y, gray_images):
 
-    center_position = [(0,0),(0,0),(0,0),(0,0)]
-    color = [(0,255,255,),(0,0,255,),(0,255,0),(255,0,0)]
+    center_position = [(0,0),(0,0),(0,0)]
+    
     # convert the grayscale image to binary image
     for i in selection:
-        gray_image = cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
+        gray_image = gray_images[i]#cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
         gray_image = cv2.GaussianBlur(gray_image,(5,5),1)
         
 
@@ -44,14 +44,15 @@ def center(selection,channel,img,center_cone_x,center_cone_y):
         cX = int(M["m10"] / M["m00"])
         cY = int(M["m01"] / M["m00"])
         center_position[i] = (cX,cY)
-        cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
-        cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
+        
+        #cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
+        #cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
      
-    cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
+    #cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
     
 
-    cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
-    return center_position, img
+    #cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
+    return center_position
 
 
 
@@ -66,7 +67,7 @@ def extract_channel(img):
     mask_g = cv2.inRange(hsv,g_low ,g_high )
     mask_b = cv2.inRange(hsv, b_low, b_high)
     mask_r = cv2.inRange(hsv, r_low, r_high)
-    mask_y = cv2.inRange(hsv, y_low, y_high)
+    #mask_y = cv2.inRange(hsv, y_low, y_high)
     
     #gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
@@ -79,39 +80,42 @@ def extract_channel(img):
     imask_r = mask_r>0
     imask_g = mask_g>0
     imask_b = mask_b>0
-    imask_y = mask_y>0
+    #imask_y = mask_y>0
   
 
     green = np.zeros_like(img, np.uint8)
     red = np.zeros_like(img, np.uint8)
     blue = np.zeros_like(img, np.uint8)
-    yellow = np.zeros_like(img, np.uint8)
+    #yellow = np.zeros_like(img, np.uint8)
 
 
     red[imask_r] = img[imask_r]
     green[imask_g] = img[imask_g]
     blue[imask_b] = img[imask_b]
-    yellow[imask_y] = img[imask_y]
+    #yellow[imask_y] = img[imask_y]
 
     ## save 
 
-    image = np.zeros_like(img, np.uint8)
-    image = red + blue +green + yellow
-    channel = [yellow, red,green,blue]
+    #image = np.zeros_like(img, np.uint8)
+    #image = red + blue +green# + yellow
+    #channel = [yellow, red,green,blue]
+    channel = [ red,green,blue]
     
-    return channel , image
+    return channel
 
 
 
 
-def channel_selection(channel,r):
-    color = [(0,255,255),(255,0,0,),(0,255,0),(0,0,255)]
+def channel_selection(channel):
+    
     selection = []
     position = []
+    gray_images = []
     for i in range(len(channel)):
         
         
         gray_image = cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
+        gray_images.append(gray_image)
         non_zero = np.nonzero(gray_image)
         l = len(non_zero[0])//2
         if l > 0:
@@ -119,12 +123,12 @@ def channel_selection(channel,r):
             position = ((non_zero[1][l],non_zero[0][l]))
         
         
-    if len(selection) == 4 :
-        try:
-            selection.remove(r)
-        except:
-            pass
-    return selection #, position
+    #if len(selection) == 4 :
+    #    try:
+    #        selection.remove(r)
+    #    except:
+    #        pass
+    return selection , gray_images#, position
 
 
 
@@ -134,8 +138,8 @@ def channel_selection(channel,r):
     
 
 def get_angles(selection, center_position,center_cone_x,center_cone_y ):
-    vec = [[0,0],[0,0],[0,0],[0,0]]
-    angle = [0,0,0,0]
+    vec = [[0,0],[0,0],[0,0]]
+    angle = [0,0,0]
     
     ref_vector = (200,0) 
     
@@ -220,76 +224,82 @@ def get_position(selection,angle,Beacon_position):
     return X,Y , math.degrees(theta)
 
 
-def beacon_main():
+def beacon_main(cam):
     #Grey Line is front of the robot
     #Green LED is the reference
 
     
     Computed_position = []
     Valid_position = []
-    #Led positions 
-    cam = PiCamera()
-    cam.resolution = (1920,1080)
-    cam.shutter_speed = 4000
-    cam.capture('photo_beacon.jpg')
-    cam.close()
+    #Takes picture of cone
     
-    raw_image = cv2.imread('photo_beacon.jpg')
-
+    
+    raw_image = np.empty((1088,1920,3),dtype = np.uint8)
+    cam.capture(raw_image, 'rgb')
+    raw_image = raw_image[:1080,:1920,:]
+    
+    #Flip image to get as a map view
     raw_image  = cv2.flip( raw_image, 1 )
-
+    raw_image = cv2.cvtColor(raw_image,cv2.COLOR_RGB2BGR)
+    cv2.imwrite('photo_beacon_post.jpg',raw_image )
 
      
     height,width,depth = raw_image.shape
+    
     circle_img  = np.zeros((height,width), np.uint8)
     
+    #Masks of cercles to keeps only exterior or cone
     cv2.circle(circle_img,(center_cone_x,center_cone_y),132,(255,255,255),thickness=-1)
     cv2.circle(circle_img,(center_cone_x,center_cone_y),95,(0,0,0),thickness=-1)
     imask = circle_img>0
+    
+    #Reconstructing masked picture
     picture = np.zeros_like(raw_image, np.uint8)
     picture[imask] = raw_image[imask]
     
     
+    #Extract channels from the picture
+    channel = extract_channel(picture)
     
-    channel,img = extract_channel(picture)
-    for i in range(4):
-        selection = channel_selection(channel,i)
-    
-        if len(selection) < 3:
-            Computed_position.append([-8000,-8000,0])
-        else:
+    selection, gray_images = channel_selection(channel)
+    print(selection)
+    if len(selection) < 3:
+        return []
+        #Computed_position.append([-8000,-8000,0])
+    else:
 
-            position , img = center(selection,channel,raw_image,center_cone_x,center_cone_y)
+        position  = center(selection,channel,center_cone_x,center_cone_y,gray_images)
 
 
-            #display(channel,position,img,center_cone_x,center_cone_y , selection)
-            
+        #display(channel,position,img,center_cone_x,center_cone_y , selection)
 
-            angle = get_angles(selection, position,center_cone_x,center_cone_y )
-            X ,Y ,A = get_position(selection,angle,[YellowLed,RedLed,GreenLed,BlueLed])
-            Computed_position.append([X,Y,A])
-    
+
+        angle = get_angles(selection, position,center_cone_x,center_cone_y )
+        X ,Y ,A = get_position(selection,angle,[RedLed,GreenLed,BlueLed])
+        Computed_position.append([X,Y,A])
+        return Computed_position
+    """
     for i in Computed_position:
         if ( i[0]>0 and i[0]< 7999 and i[1]>0 and i[1] <7999):
             Valid_position.append(i)
-                
-                    
+
+
     distance = []
-    
+
     for i in range(len(Valid_position)):
         dist = 0
         for j in range(len(Valid_position)):
             dist = dist +math.sqrt(abs(Valid_position[i][0] - Valid_position[j][0])*abs(Valid_position[i][0] - Valid_position[j][0])  + abs(Valid_position[i][1] - Valid_position[j][1])*abs(Valid_position[i][1] - Valid_position[j][1]))
-    
+
         distance.append(dist)
     if len(distance )>0:  
         ret_index = np.argmin(distance)
 
         #cv2.imwrite('photo_beacon_post.jpg', img)
-
-        return Valid_position[ret_index]
-    else:
-        return []
+    """
+    #return Valid_position[ret_index]
+    #else:
+        #return []
                     
 
     

@@ -16,19 +16,17 @@ def find_path(grid,coord_objective,robot_pos):
     X_robot , Y_robot, Angle_robot = robot_pos
     dist = length([X_objective - X_robot,Y_objective - Y_robot])
     if( Y_objective > 5000 and X_objective < 5000 ) :
-        
-        #Check if obj go through zone
-
-        #value, path_coord = get_path(grid,[X_objective,Y_objective],robot_pos)
-        
-        return [[X_objective,Y_robot,0]]
-
+        #Objective in top
+        if(Y_Robot<5000 or X_Robot>5000):
+            return [[X_objective,Y_robot,0]]
+        else:
+            return None
             
     elif( Y_robot > 5000 and X_robot < 5000 ):
-    
-        #value, path_coord = get_path(grid,[X_objective,Y_objective],robot_pos)
-        
-        return [[X_robot,Y_objective,0]]
+        if(Y_objective < 5000 or X_objective > 5000):
+            return [[X_robot,Y_objective,0]]
+        else:
+            return None
         
             
     else:
