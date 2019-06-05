@@ -3,8 +3,8 @@ import numpy as np
 import math
 from picamera import PiCamera
 
-center_cone_x = 973#981
-center_cone_y = 648#597 
+center_cone_x = 974#981
+center_cone_y = 654#597 
 RedLed = (0,8040)
 GreenLed = (8040,8040)
 BlueLed = (8040,0)
@@ -23,10 +23,10 @@ y_low = (55,50, 50)
 y_high = (80, 255,255)
 
 
-def center(selection,channel,center_cone_x,center_cone_y, gray_images):
+def center(selection,channel,img,center_cone_x,center_cone_y, gray_images):
 
     center_position = [(0,0),(0,0),(0,0)]
-    
+    color = [(0,0,255),(0,255,0),(255,0,0)]
     # convert the grayscale image to binary image
     for i in selection:
         gray_image = gray_images[i]#cv2.cvtColor(channel[i], cv2.COLOR_BGR2GRAY)
@@ -45,13 +45,14 @@ def center(selection,channel,center_cone_x,center_cone_y, gray_images):
         cY = int(M["m01"] / M["m00"])
         center_position[i] = (cX,cY)
         
-        #cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
-        #cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
+        cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
+        cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
      
-    #cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
+    cv2.line(img,(center_cone_x +200  ,center_cone_y  ),(center_cone_x,center_cone_y),[255,255,255], 1)
     
 
-    #cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
+    cv2.circle(img, (center_cone_x, center_cone_y), 5, (255, 255, 255), -1)
+    cv2.imwrite('photo_beacon_post.jpg',img )
     return center_position
 
 
@@ -238,11 +239,12 @@ def beacon_main(cam):
     cam.capture(raw_image, 'rgb')
     raw_image = raw_image[:1080,:1920,:]
     
+    
     #Flip image to get as a map view
     raw_image  = cv2.flip( raw_image, 1 )
     raw_image = cv2.cvtColor(raw_image,cv2.COLOR_RGB2BGR)
-    cv2.imwrite('photo_beacon_post.jpg',raw_image )
-
+    
+    cv2.imwrite('photo_beacon.jpg',raw_image )
      
     height,width,depth = raw_image.shape
     
@@ -268,7 +270,7 @@ def beacon_main(cam):
         #Computed_position.append([-8000,-8000,0])
     else:
 
-        position  = center(selection,channel,center_cone_x,center_cone_y,gray_images)
+        position  = center(selection,channel,raw_image,center_cone_x,center_cone_y,gray_images)
 
 
         #display(channel,position,img,center_cone_x,center_cone_y , selection)
@@ -276,8 +278,7 @@ def beacon_main(cam):
 
         angle = get_angles(selection, position,center_cone_x,center_cone_y )
         X ,Y ,A = get_position(selection,angle,[RedLed,GreenLed,BlueLed])
-        Computed_position.append([X,Y,A])
-        return Computed_position
+        return X,Y,A
     """
     for i in Computed_position:
         if ( i[0]>0 and i[0]< 7999 and i[1]>0 and i[1] <7999):

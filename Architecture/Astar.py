@@ -17,7 +17,7 @@ def find_path(grid,coord_objective,robot_pos):
     dist = length([X_objective - X_robot,Y_objective - Y_robot])
     if( Y_objective > 5000 and X_objective < 5000 ) :
         #Objective in top
-        if(Y_Robot<5000 or X_Robot>5000):
+        if(Y_robot<5000 or X_robot>5000):
             return [[X_objective,Y_robot,0]]
         else:
             return None
@@ -67,9 +67,10 @@ def get_segment(coord,grid,orientation,dist_max):
     for d in range(dist_max):
         
         if( y +round(orientation[1]* d) >0 and y +round(orientation[1]* d) < 799 
-          and 0 +round(orientation[0]* d) >0 and 0 +round(orientation[0]* d)< 799):
+          and x +round(orientation[0]* d) >0 and x +round(orientation[0]* d)< 799):
             detection_line.append(grid[y +round(orientation[1]* d) ,x  +round( orientation[0]*  d)])
-            path_coord.append( [x  +round( orientation[0]*  d),y +round(orientation[1]* d)])
+        else:
+            detection_line.append(255)
     return detection_line , path_coord
 
 def get_map_information(robot_pos,grid,theta, distance_detection):
@@ -97,6 +98,8 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
             path_coord=np.insert(path_coord,0,np.array(path_coord0),axis=0)
             if(len(result0) >0):
                 list_maximum_lines.append(max(result0))
+            else:
+                list_maximum_lines.append(255)
         else:
             list_maximum_lines.append(255)
                 
@@ -105,6 +108,8 @@ def get_map_information(robot_pos,grid,theta, distance_detection):
             path_coord=np.insert(path_coord,0,np.array(path_coord1),axis=0)
             if(len(result1) >0):
                 list_maximum_lines.append(max(result1))
+            else:
+                list_maximum_lines.append(255)
         else:
                 list_maximum_lines.append(255)
         
