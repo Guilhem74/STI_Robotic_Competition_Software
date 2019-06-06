@@ -47,6 +47,9 @@ class Robot_Class:
             self.buf_stm.append(string_)#Send every messages
     def Get_Read_Buffer(self):
         return self.buf_broadcast
+    def Clear_Read_Buffer(self):
+        self.buf_broadcast.clear()
+        return
     def Collect_Message(self):
         if(len(self.buf_broadcast)):
             return self.buf_broadcast.popleft()
@@ -73,7 +76,7 @@ class Robot_Class:
     def Is_it_M3_Answer(self, Message):
         if(Message is None):
             return False, None
-        str2=parse("M0 X{} Y{} A{} T{} S{}",Message)
+        str2=parse(" M0 X{} Y{} A{} T{} S{}\r\n",Message)
         if(str2 is not None):
             array_argument=np.zeros(5)
             for i in range(5):
@@ -96,15 +99,17 @@ class Robot_Class:
         Set_Coordinate=[X,Y,self.Robot_Speed,max(Timeout*1.2,1000),R]
         while(True):
             self.Send_Go_To_Coordinate(Set_Coordinate)
-            M0_State, Output=self.Wait_For_M3_Answer((Timeout*1.2)/1000+400)
+            M0_State, Output=self.Wait_For_M3_Answer((Timeout*1.2+2000)/1000)
             if(M0_State== False):
                 print('STM32 Lack of answer')
             else:
                 print(Output)
                 if(Output=='Blocked'):
-                    X_,Y_,R_=self.Obstacle_Avoidance_Calculation()
-                    self.Go_To(X_,Y_,R_,level+1)
-                    pass
+                    X_,Y_,R_, Found=self.Obstacle_Avoidance_Calculation()
+                    if Found:
+                        self.Go_To(X_,Y_,R_,level+1)
+                    else:
+                        break;
                 elif(Output=='Timeout'):
                     break;
                 elif(Output=='Arrived'):
@@ -123,14 +128,16 @@ class Robot_Class:
         M201_String='M201 H0 S' + str(Max_Speed)+'\r\n'
         M3_String='M3 H3\r\n'
         All_Commands = (G0_String,M201_String,M3_String)
+        print(All_Commands)
         self.Send_Messages(All_Commands)
         
-    def Set_Robot_Position(self,x,y,a):
+    def Set_Robot_Position(self,x,y,a, send=False):
         self.X_Pos = x
         self.Y_Pos = y
         self.Angle_Deg = a
-        command = 'G92 X' + str(round(self.X_Pos)) +' Y'+str(round(self.Y_Pos))+ ' A'+str(round(self.Angle_Deg))+ '\r\n'
-        self.Send_Messages(command)
+        if send :
+            command = 'G92 X' + str(round(self.X_Pos)) +' Y'+str(round(self.Y_Pos))+ ' A'+str(round(self.Angle_Deg))+ '\r\n'
+            self.Send_Messages(command)
     def Set_Robot_Goal(self,Coord):
         self.Goal_X = x
         self.Goal_Y = y
@@ -175,7 +182,7 @@ class Robot_Class:
             
         #Get information from sensor and map
         Space_Free = {'Front':1,'Left':1,'Right':1,'Back':1 ,'FrontLeft':1,'FrontRight':1, 'BackLeft':1, 'BackRight':1, }
-        if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m']):
+        if(Sensor_State['k'] or Sensor_State['l'] or Sensor_State['m'] or( Sensor_State['g'] and not(Sensor_State['j']))or( Sensor_State['e'] and not(Sensor_State['i']))):
             Space_Free['Front']=0;
         if(Sensor_State['a'] or Sensor_State['b'] or Sensor_State['c'] or Sensor_State['d']):
             Space_Free['Back']=0;
@@ -233,7 +240,11 @@ class Map:
             return True
         return False
     def IsNormalZone(self,Objectif):
-        return not(self.IsRockZone(Objectif) or self.IsPlatformZone(Objectif) or self.IsGrassZone(Objectif))
+        Objectif_X, Objectif_Y = Objectif
+        if(Objectif_X>0 and Objectif_X<8000 and Objectif_Y>0 and Objectif_Y<8000):
+            return not(self.IsRockZone(Objectif) or self.IsPlatformZone(Objectif) or self.IsGrassZone(Objectif))
+        else:
+            return False
     def IsAccessible(self,Objectif):
         return (self.IsNormalZone(Objectif) or self.IsGrassZone(Objectif))
     def Calculate_Side_Checkpoint(self,Robot_Pos, Space_Around):
@@ -244,19 +255,19 @@ class Map:
             Y_New=Y+math.sin(math.radians(A-90))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Front go to Right',X_New, Y_New)
-                return X_New,Y_New,0
+                return X_New,Y_New,0 , True
         if(not(Space_Around['Front']) and Space_Around['Left']): 
             X_New=X+math.cos(math.radians(A+90))*300
             Y_New=Y+math.sin(math.radians(A+90))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Front go to left',X_New, Y_New)
-                return X_New,Y_New,0
+                return X_New,Y_New,0 , True
         if(Space_Around['Front'] and( not(Space_Around['Right'])or not(Space_Around['Left']))):
             X_New=X+math.cos(math.radians(A))*300
             Y_New=Y+math.sin(math.radians(A))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Side go to the Front',X_New, Y_New)
-                return X_New,Y_New,0
+                return X_New,Y_New,0 , True
         if(not(Space_Around['Front']) and not(Space_Around['Left']) and not(Space_Around['Right']) ):
             #Back LEFT
             X_New=X+math.cos(math.radians(A+120))*450
@@ -265,22 +276,22 @@ class Map:
             
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Back right',X_New, Y_New)
-                return X_New,Y_New,1
+                return X_New,Y_New,1 , True
             X_New=X+math.cos(math.radians(A-120))*450
             Y_New=Y+math.sin(math.radians(A-120))*450
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Back Left',X_New, Y_New)
-                return X_New,Y_New,1
+                return X_New,Y_New,1 , True
             X_New=X+math.cos(math.radians(A+180))*300
             Y_New=Y+math.sin(math.radians(A+180))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Back',X_New, X_New)
-                return X_New,Y_New,1
+                return X_New,Y_New,1 , True
         
         X_New=X
         Y_New=Y
         print('Avoidance not found',X_New, Y_New)
-        return X_New,Y_New,0
+        return X_New,Y_New,0 , False
 
         
 
