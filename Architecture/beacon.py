@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 import math
 from picamera import PiCamera
-
-center_cone_x = 974#981
-center_cone_y = 654#597 
+import time
+center_cone_x = 978#978 #974
+center_cone_y = 655#655 #654
 RedLed = (0,8040)
 GreenLed = (8040,8040)
 BlueLed = (8040,0)
@@ -44,7 +44,8 @@ def center(selection,channel,img,center_cone_x,center_cone_y, gray_images):
         cX = int(M["m10"] / M["m00"])
         cY = int(M["m01"] / M["m00"])
         center_position[i] = (cX,cY)
-        
+        end = time.time()
+        print('Time to detect contour and center: ', end - start)
         cv2.circle(img, (cX, cY), 5, (255, 255, 255), -1)
         cv2.line(img,(cX ,cY),(center_cone_x,center_cone_y),color[i], 2)
      

@@ -114,11 +114,14 @@ class robot:
 
     def get_beacon_position(self):
         Beacon_pos = Beacon.beacon_main(self.cam)
+        Robot_Pos=self.get_position()
         if len(Beacon_pos)>0:
+            if(Robot_Pos[0]<3000 and Robot_Pos[1]<3000):
+                return Robot_Pos[0],Robot_Pos[1],Beacon_pos[2]
             return Beacon_pos
         else:
             print('Beacon not working');
-            return self.get_position()
+            return Robot_Pos[0],Robot_Pos[1],Robot_Pos[2]
          
 
     
