@@ -197,18 +197,16 @@ class Mapping:
     
     if (len(self.bottle)) >0:
         for coord in self.bottle:
-            dist = self.length([coord[0] - X_robot , coord[1] - Y_robot ])
-            if dist < 50:
-                dist = 1000
-            Distance_robot_to_bottle.append(dist)
+            X_Distance= abs(coord[0] - X_robot)
+            Y_Distance= abs(coord[1] - Y_robot)
+            Distance= math.sqrt(X_Distance*X_Distance+Y_Distance*Y_Distance)
+            Distance_robot_to_bottle.append(Distance)
         
         index = Distance_robot_to_bottle.index(min(Distance_robot_to_bottle))  
         ret = self.bottle[index][0]*10 , self.bottle[index][1] * 10
-        if np.mean(Distance_robot_to_bottle) == 1000:
-            return None,None
         return ret 
     else:
-        return None, None
+        return None,None
         
   def clean_all_bottle_list(self):
     self.bottle = []
