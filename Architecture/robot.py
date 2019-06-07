@@ -17,11 +17,8 @@ class Robot_Class:
         self.Angle_Deg = a
         self.Robot_Speed=750
         self.map= Map()
-        self.Goal_X=x
-        self.Goal_Y=y
-        self.Goal_Temp_X=x
-        self.Goal_Temp_Y=y
-        self.Goal_Temp=False
+        self.Try_Single_Goal=0
+        self.Max_Try_Single_Goal=2
         self.ir_sensors_state = {
             'a':0,
             'b':0,
@@ -92,31 +89,49 @@ class Robot_Class:
                 return True, 'Blocked'
             
         return False, None
-    def Go_To(self,X,Y,R,level=0):
+    def Go_To(self,X,Y,R,level=0,Max_Level=3, Avoidance=True):
+        """WARNING: Recursive function"""
+        if (level==0):
+            self.Reset_Nb_Try_Goal()
         print('Going to', str(X), ' ', str(Y), 'with R', str(R), 'level', str(level))
         X_Robot , Y_Robot, A_Robot = self.Get_Robot_Position()
         Timeout = (math.sqrt((X-X_Robot)*(X-X_Robot)+(Y-Y_Robot)*(Y-Y_Robot))/self.Robot_Speed)*1000
         Set_Coordinate=[X,Y,self.Robot_Speed,max(Timeout*1.2,1000),R]
-        while(True):
+        while(level<=Max_Level and self.Keep_Trying_Goal()):
             self.Send_Go_To_Coordinate(Set_Coordinate)
+            self.Increment_Nb_Try_Goal()
             M0_State, Output=self.Wait_For_M3_Answer((Timeout*1.2+2000)/1000)
             if(M0_State== False):
                 print('STM32 Lack of answer')
             else:
                 print(Output)
-                if(Output=='Blocked'):
-                    X_,Y_,R_, Found=self.Obstacle_Avoidance_Calculation()
+                if(Output=='Blocked' and Avoidance==True):
+                    X_,Y_,R_, Found, X_Backward, Y_Backward=self.Obstacle_Avoidance_Calculation()
                     if Found:
-                        self.Go_To(X_,Y_,R_,level+1)
+                        self.Go_To(X_Backward,Y_Backward,1,level=level+1,Max_Level=level+1,Avoidance=False)
+                        #Move backward only and do not go further
+                        self.Go_To(X_,Y_,R_,level+1,Max_Level)
                     else:
                         break;
                 elif(Output=='Timeout'):
                     break;
                 elif(Output=='Arrived'):
                     break;
-                    
-
+                else:
+                    break;
         print('End of', level)
+    def Set_Max_Try_Single_Goal(self,x):
+        self.Max_Try_Single_Goal=x
+    def Reset_Nb_Try_Goal(self):
+        self.Try_Single_Goal=0
+    def Increment_Nb_Try_Goal(self):
+        self.Try_Single_Goal=self.Try_Single_Goal+1
+    def Keep_Trying_Goal(self):
+        if (self.Try_Single_Goal<self.Max_Try_Single_Goal):
+            return True
+        else:
+            return False
+    
     def Send_Go_To_Coordinate(self,Set_Coordinate):
         X_Des=Set_Coordinate[0]
         Y_Des=Set_Coordinate[1]
@@ -138,18 +153,7 @@ class Robot_Class:
         if send :
             command = 'G92 X' + str(round(self.X_Pos)) +' Y'+str(round(self.Y_Pos))+ ' A'+str(round(self.Angle_Deg))+ '\r\n'
             self.Send_Messages(command)
-    def Set_Robot_Goal(self,Coord):
-        self.Goal_X = x
-        self.Goal_Y = y
-        self.Goal_Temp = False
-    def Set_Robot_Temp_Goal(self,Coord):
-        self.Goal_Temp_X = x
-        self.Goal_Temp_Y = y
-        self.Goal_Temp = True
     
-    def Realize_Your_Dream(self):
-        if(self.Goal_Temp):
-            pass
     def Get_Robot_Position(self):
         return self.X_Pos,self.Y_Pos,self.Angle_Deg
 
@@ -190,6 +194,10 @@ class Robot_Class:
             Space_Free['Left']=0;
         if(Sensor_State['e'] or Sensor_State['f'] or Sensor_State['i']):
             Space_Free['Right']=0;
+        if((Sensor_State['l'] and not(Sensor_State['k']))or ( Sensor_State['e'] and not(Sensor_State['i']))):
+            Space_Free['FrontRight']=0;
+        if((Sensor_State['k'] and not(Sensor_State['l']))or ( Sensor_State['g'] and not(Sensor_State['j']))):
+            Space_Free['FrontLeft']=0;
         return Space_Free
     
     def Can_I_Go(self, Objectif):
@@ -250,48 +258,48 @@ class Map:
     def Calculate_Side_Checkpoint(self,Robot_Pos, Space_Around):
         X, Y, A = Robot_Pos
         X_Robot, Y_Robot, A_Robot= Robot_Pos
-        if(not(Space_Around['Front']) and Space_Around['Right']):
+        X_Backward=X+math.cos(math.radians(A-180))*300
+        Y_Backward=Y+math.sin(math.radians(A-180))*300
+        print(Space_Around)
+        if(not(Space_Around['Front']) and Space_Around['FrontRight']):
             X_New=X+math.cos(math.radians(A-90))*300
             Y_New=Y+math.sin(math.radians(A-90))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Front go to Right',X_New, Y_New)
-                return X_New,Y_New,0 , True
-        if(not(Space_Around['Front']) and Space_Around['Left']): 
+                return X_New,Y_New,0 , True, X_Backward,Y_Backward
+        if(not(Space_Around['Front']) and Space_Around['FrontLeft']): 
             X_New=X+math.cos(math.radians(A+90))*300
             Y_New=Y+math.sin(math.radians(A+90))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Front go to left',X_New, Y_New)
-                return X_New,Y_New,0 , True
+                return X_New,Y_New,0 , True, X_Backward,Y_Backward
         if(Space_Around['Front'] and( not(Space_Around['Right'])or not(Space_Around['Left']))):
             X_New=X+math.cos(math.radians(A))*300
             Y_New=Y+math.sin(math.radians(A))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Side go to the Front',X_New, Y_New)
-                return X_New,Y_New,0 , True
+                return X_New,Y_New,0 , True, X_Backward,Y_Backward
         if(not(Space_Around['Front']) and not(Space_Around['Left']) and not(Space_Around['Right']) ):
             #Back LEFT
-            X_New=X+math.cos(math.radians(A+120))*450
-            Y_New=Y+math.sin(math.radians(A+120))*450
+            
+            X_Backward=X+math.cos(math.radians(A-180))*600
+            Y_Backward=Y+math.sin(math.radians(A-180))*600
+            X_New=X_Backward+math.cos(math.radians(A+90))*300
+            Y_New=Y_Backward+math.sin(math.radians(A+90))*300
             #Back Right
             
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Back right',X_New, Y_New)
-                return X_New,Y_New,1 , True
-            X_New=X+math.cos(math.radians(A-120))*450
-            Y_New=Y+math.sin(math.radians(A-120))*450
+                return X_New,Y_New,0 , True, X_Backward,Y_Backward
+            X_New=X+math.cos(math.radians(A-90))*300
+            Y_New=Y+math.sin(math.radians(A-90))*300
             if(self.IsAccessible((X_New,Y_New))):
                 print('Avoidance Back Left',X_New, Y_New)
-                return X_New,Y_New,1 , True
-            X_New=X+math.cos(math.radians(A+180))*300
-            Y_New=Y+math.sin(math.radians(A+180))*300
-            if(self.IsAccessible((X_New,Y_New))):
-                print('Avoidance Back',X_New, X_New)
-                return X_New,Y_New,1 , True
-        
+                return X_New,Y_New,0 , True, X_Backward,Y_Backward
         X_New=X
         Y_New=Y
         print('Avoidance not found',X_New, Y_New)
-        return X_New,Y_New,0 , False
+        return X_New,Y_New,0 , False , X_Backward,Y_Backward
 
         
 
