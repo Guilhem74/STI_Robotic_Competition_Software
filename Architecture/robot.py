@@ -28,6 +28,7 @@ class Robot_Class:
         self.Max_Try_Single_Goal=2
         self.Sensor_Enabled=15
         self.Robot_Speed=150
+        self.Bottle_Collected=0
         self.ir_sensors_state = {
             'a':0,
             'b':0,
@@ -74,7 +75,7 @@ class Robot_Class:
                 array_argument=np.zeros(2)
                 for i in range(2):
                     array_argument[i]=float(str2[i])
-            Array.append((array_argument[0],array_argument[1]))
+                Array.append((array_argument[0],array_argument[1]))
         return Array
     def Send_Messages(self,All_Commands):
         for string_ in All_Commands:
@@ -106,8 +107,19 @@ class Robot_Class:
                 return None, None
             elif(Message is not None):
                 Valid, Output= self.Is_it_M3_Answer(Message)
-                print(Message)
-                if(Valid is not False):
+                print('Message',Message)
+                if(Valid is True):
+                    return Valid, Output
+    def Wait_For_M2_Answer(self, Timeout):
+        Start_Time=time.time()
+        while(True):
+            Message=self.Collect_Message()
+            if((time.time()-Start_Time)>Timeout and Message==None):
+                return None, None
+            elif(Message is not None):
+                Valid, Output= self.Is_it_M2_Answer(Message)
+                print('Message',Message)
+                if(Valid is True):
                     return Valid, Output
     def Is_it_M3_Answer(self, Message):
         if(Message is None):
@@ -127,16 +139,40 @@ class Robot_Class:
             elif array_argument[3]==2:
                 return True, 'Blocked'
             
+        return False, None            
+    def Is_it_M2_Answer(self, Message):
+        if(Message is None):
+            return False, None
+        str2=parse(" M0 H2 T{}\r\n",Message)
+        print('PreParse',Message)
+        if(str2 is not None):
+            array_argument=np.zeros(1)
+            print('PostParse',str2)
+            for i in range(1):
+                array_argument[i]=float(str2[i])
+            if array_argument[0]==1:
+                return True, 'Timeout'
+            elif array_argument[0]==2:
+                return True, 'Blocked'
+            return True, 'Unknow'
+            
         return False, None
-    def Go_To(self,X,Y,R,level=0,Max_Level=3, Avoidance=True):
+    def Go_To(self,X,Y,R,level=0,Max_Level=3, Avoidance=True, Path_Checking=True):
         """WARNING: Recursive function"""
         if (level==0):
             self.Reset_Nb_Try_Goal()
         while(level<=Max_Level and self.Keep_Trying_Goal() and not(self.Has_reached_final_position((X,Y)))):
             X_Robot , Y_Robot, A_Robot = self.Get_Robot_Position()
             self.Set_Previous_Pos((X_Robot,Y_Robot))
-            Timeout = (math.sqrt((X-X_Robot)*(X-X_Robot)+(Y-Y_Robot)*(Y-Y_Robot))/self.Robot_Speed)*1000
-            Set_Coordinate=[X,Y,self.Robot_Speed,max(Timeout*1.2,1000),R]
+            X_Des=X
+            Y_Des=Y
+            if(not(self.Check_Valid_Path((X_Robot,Y_Robot),(X_Des,Y_Des))) and Path_Checking):
+                if(self.map.IsUpper_Normal_Zone((X_Robot,Y_Robot))):
+                    Y_Des=Y_Robot#Not gonna change the Y coordinate
+                else:
+                    X_Des=X_Robot#Not gonna change the X coordinate
+            Timeout = (math.sqrt((X_Des-X_Robot)*(X_Des-X_Robot)+(Y_Des-Y_Robot)*(Y_Des-Y_Robot))/self.Robot_Speed)*1000
+            Set_Coordinate=[X_Des,Y_Des,self.Robot_Speed,max(Timeout*1.2,1000),R]
             self.Send_Go_To_Coordinate(Set_Coordinate)
             self.Increment_Nb_Try_Goal()
             M0_State, Output=self.Wait_For_M3_Answer((Timeout*1.2+2000)/1000)
@@ -146,20 +182,49 @@ class Robot_Class:
                 print(Output)
                 self.Clean_All_On_Path((self.Get_Previous_Pos()), (self.Get_Robot_Position()));
                 if(Output=='Blocked' and Avoidance==True ):
-                    X_,Y_,R_, Extra, X_Backward, Y_Backward, R_Backward=self.Obstacle_Avoidance_Calculation((X,Y,R))
+                    X_,Y_,R_, Extra, X_Backward, Y_Backward, R_Backward=self.Obstacle_Avoidance_Calculation((X_Des,Y_Des,R))
                     if Extra:
                         self.Go_To(X_Backward,Y_Backward,R_Backward,level=level+1,Max_Level=level+1,Avoidance=False)
                         self.Go_To(X_,Y_,R_,level+1,Max_Level)
                         #Move backward only and do not go further
                     else:
                         self.Go_To(X_,Y_,R_,level+1,Max_Level)
-                elif(Output=='Timeout' and self.Has_reached_final_position((X,Y))):
+                elif(Output=='Timeout' and self.Has_reached_final_position((X_Des,Y_Des))):
                     break;
                 elif(Output=='Timeout'):
                     self.Increment_Nb_Try_Goal()
                 elif(Output=='Arrived'):
                     break;
-
+                else:
+                    #Avoidance not allowed
+                    break;
+    def Go_To_Speed(self,R,L,T,X_Cal=-9999, Y_Cal=-9999, A_Cal=-9999,Detection=True, Calibration=False, Level=0):
+        """WARNING: Recursive function"""
+        if(Level>=3):
+            return 
+        G1_String='G1 R' + str(round(R))+' L'+str(round(L))+' T'+str(round(T))+'\r\n'
+        if(Detection==True):
+            M3_String='M3 H2 S'+ str(15) +'\r\n'
+        else:
+            M3_String='M3 H2 S'+ str(0) +'\r\n'
+        All_Commands = (G1_String,M3_String)
+        print(All_Commands)
+        self.Send_Messages(All_Commands)
+        M0_State, Output=self.Wait_For_M2_Answer(max((T*1.2/1000),2.5))
+        if(M0_State== False):
+            print('STM32 Lack of answer')
+        else:
+            print('answer',Output)
+            if(Output=='Blocked' and Calibration==False ):
+                return
+            elif(Output=='Blocked'  and Calibration==True):
+                print('Setting Pos')
+                self.Set_Robot_Position(X_Cal,Y_Cal,A_Cal,True)
+            elif(Output=='Timeout' and Calibration==True):
+                print('Setting pos')
+                self.Set_Robot_Position(X_Cal,Y_Cal,A_Cal,True)
+            elif(Output=='Timeout'):
+                return
         #print('End of', level)
     def Set_Previous_Pos(self,Pos):
         self.X_Previous_Pos=Pos[0]
@@ -198,13 +263,20 @@ class Robot_Class:
         #print(All_Commands)
         self.Send_Messages(All_Commands)
         
-    def Set_Robot_Position(self,x,y,a, Transmission=False):
-        self.X_Pos = x
-        self.Y_Pos = y
-        self.Angle_Deg = a
+    def Set_Robot_Position(self,x=-9999,y=-9999,a=-9999, Transmission=False):
+        command = 'G92 '
+        if x!=-9999:
+            self.X_Pos = x
+            command = command + 'X' + str(round(self.X_Pos)) + ' '
+        if y!=-9999:
+            self.Y_Pos = y
+            command = command + 'Y' + str(round(self.Y_Pos))+ ' '
+        if a!=-9999:
+            self.Angle_Deg = a
+            command = command + 'A' + str(round(self.Angle_Deg))+ ' '
         if Transmission :
-            command = 'G92 X' + str(round(self.X_Pos)) +' Y'+str(round(self.Y_Pos))+ ' A'+str(round(self.Angle_Deg))+ '\r\n'
-            #print(command)
+            command=command+'\r\n'
+            print(command)
             self.Send_Message(command)
     
     def Get_Robot_Position(self):
@@ -255,6 +327,29 @@ class Robot_Class:
             Y_Temp=Y_Start+math.sin(Angle_Travel)*Point
             self.Clean_Bottle_Of_Position((X_Temp,Y_Temp))
         self.Clean_Bottle_Of_Position((X_End,Y_End))
+    def Check_Valid_Path(self, Start_Position,End_Position,Step_Size=200):
+        X_Start= Start_Position[0]
+        Y_Start= Start_Position[1]
+        X_End=End_Position[0]
+        Y_End= End_Position[1]
+        Error_X=X_End-X_Start;
+        Error_Y=Y_End-Y_Start;
+        Angle_Travel=math.atan2(Error_Y,Error_X)
+        Distance= round(math.sqrt((Error_X) ** 2 + (Error_Y) ** 2))
+        for Point in list(range(0,Distance,Step_Size)):
+            X_Temp=X_Start+math.cos(Angle_Travel)*Point
+            Y_Temp=Y_Start+math.sin(Angle_Travel)*Point
+            if(self.map.IsAccessible((X_Temp,Y_Temp))):
+                pass
+            else:
+                return False
+        return True
+    def Add_Bottle_Collected(self):
+        self.Bottle_Collected=self.Bottle_Collected+1        
+    def Get_Bottle_Collected(self):
+        return self.Bottle_Collected
+    def Reset_Bottle_Collected(self):
+        self.Bottle_Collected=0
     def Update_Bottle_List(self,Data):
         if Data!=None:
             Data=self.Parse_Data_TCP(Data)
@@ -355,23 +450,23 @@ class Robot_Class:
         return Zone   
     def Obstacle_Avoidance_Calculation(self, Goal):
         return self.map.Calculate_Side_Checkpoint(self.Get_Robot_Position(),Goal,self.Get_Free_Space_Around(self.Get_Sensor_State()))
-    def Start_Collector():
+    def Start_Collector(self):
         self.ser_Collector.write(b'G1 R1500 L2100\r\n')
-    def Reverse_Collector():
+    def Reverse_Collector(self):
         self.ser_Collector.write(b'G1 R-1500 L-2100\r\n')
-    def Stop_Collector():
+    def Stop_Collector(self):
         self.ser_Collector.write(b'G1 R0 L0\r\n')
 
 
 class Map:
     def IsRockZone(self,Objectif):
         Objectif_X, Objectif_Y = Objectif
-        if(Objectif_X<3000 and Objectif_Y>5000):
+        if(Objectif_X<3500 and Objectif_Y>4500):
             return True
         return False
     def IsPlatformZone(self,Objectif):
         Objectif_X, Objectif_Y = Objectif
-        if(Objectif_X>5000 and Objectif_Y>6000):
+        if(Objectif_X>4750 and Objectif_Y>5750):
             return True
         return False
     def IsGrassZone(self,Objectif):
@@ -387,6 +482,12 @@ class Map:
             return False
     def IsAccessible(self,Objectif):
         return (self.IsNormalZone(Objectif) or self.IsGrassZone(Objectif))
+    def IsUpper_Normal_Zone(self,Objectif): #Between rock and platform
+        Objectif_X, Objectif_Y = Objectif
+        if (self.IsNormalZone(Objectif)):
+            if(Objectif_X>3000 and Objectif_Y>5000 and Objectif_X<5000):
+                return True
+        return  False
     def Calculate_Side_Checkpoint(self,Robot_Pos,Goal, Space_Around):
         X, Y, A = Robot_Pos
         X_Des=Goal[0]
