@@ -15,6 +15,8 @@ class Robot_Class:
     def __init__(self,x=0,y=0,a=0):
         self.X_Pos = x
         self.Y_Pos = y
+        self.X_Previous_Pos = x
+        self.Y_Previous_Pos = y
         self.Angle_Deg = a
         self.Robot_Speed=750
         self.map= Map()
@@ -25,6 +27,7 @@ class Robot_Class:
         self.Try_Single_Goal=0
         self.Max_Try_Single_Goal=2
         self.Sensor_Enabled=15
+        self.Robot_Speed=150
         self.ir_sensors_state = {
             'a':0,
             'b':0,
@@ -57,10 +60,11 @@ class Robot_Class:
             self.TCP_Addr=None
             self.TCP_S=None
     def Empty_TCP(self):
-        Get_Data_TCP()
+        self.Get_Data_TCP()
     def Get_Data_TCP(self):
         if self.TCP_Conn != None:
             return Tcp_Ip.check_data_received(self.TCP_Conn, 4096)
+        print('Unconnected')
         return None
     def Parse_Data_TCP(self, Data):
         Array= []
@@ -74,7 +78,9 @@ class Robot_Class:
         return Array
     def Send_Messages(self,All_Commands):
         for string_ in All_Commands:
-            self.buf_stm.append(string_)#Send every messages
+            self.Send_Message(string_)#Send every messages
+    def Send_Message(self,Single_Command):
+            self.buf_stm.append(Single_Command)
     def Get_Read_Buffer(self):
         return self.buf_broadcast
     def Clear_Read_Buffer(self):
@@ -128,6 +134,7 @@ class Robot_Class:
             self.Reset_Nb_Try_Goal()
         while(level<=Max_Level and self.Keep_Trying_Goal() and not(self.Has_reached_final_position((X,Y)))):
             X_Robot , Y_Robot, A_Robot = self.Get_Robot_Position()
+            self.Set_Previous_Pos((X_Robot,Y_Robot))
             Timeout = (math.sqrt((X-X_Robot)*(X-X_Robot)+(Y-Y_Robot)*(Y-Y_Robot))/self.Robot_Speed)*1000
             Set_Coordinate=[X,Y,self.Robot_Speed,max(Timeout*1.2,1000),R]
             self.Send_Go_To_Coordinate(Set_Coordinate)
@@ -137,6 +144,7 @@ class Robot_Class:
                 print('STM32 Lack of answer')
             else:
                 print(Output)
+                self.Clean_All_On_Path((self.Get_Previous_Pos()), (self.Get_Robot_Position()));
                 if(Output=='Blocked' and Avoidance==True ):
                     X_,Y_,R_, Extra, X_Backward, Y_Backward, R_Backward=self.Obstacle_Avoidance_Calculation((X,Y,R))
                     if Extra:
@@ -152,7 +160,12 @@ class Robot_Class:
                 elif(Output=='Arrived'):
                     break;
 
-        print('End of', level)
+        #print('End of', level)
+    def Set_Previous_Pos(self,Pos):
+        self.X_Previous_Pos=Pos[0]
+        self.Y_Previous_Pos=Pos[1]
+    def Get_Previous_Pos(self):
+        return self.X_Previous_Pos, self.Y_Previous_Pos
     def Set_Max_Try_Single_Goal(self,x):
         self.Max_Try_Single_Goal=x
     def Reset_Nb_Try_Goal(self):
@@ -164,7 +177,14 @@ class Robot_Class:
             return True
         else:
             return False
-    
+    def Set_Robot_Speed(self,x, Transmission=True):
+        self.Robot_Speed=x
+        if Transmission:
+            M201_String='M201 H0 S' + str(x)+'\r\n'
+            #print(M201_String)
+            self.Send_Message(M201_String)
+    def Get_Robot_Speed(self):
+        return self.Robot_Speed
     def Send_Go_To_Coordinate(self,Set_Coordinate):
         X_Des=Set_Coordinate[0]
         Y_Des=Set_Coordinate[1]
@@ -173,28 +193,28 @@ class Robot_Class:
         Backward_Parameter=Set_Coordinate[4]
         """Create messages"""
         G0_String='G0 X' + str(round(X_Des))+' Y'+str(round(Y_Des))+' T'+str(round(TimeOut))+ ' R'+str(round(Backward_Parameter))+'\r\n'
-        M201_String='M201 H0 S' + str(Max_Speed)+'\r\n'
         M3_String='M3 H3 S'+ str(self.Sensor_Enabled) +'\r\n'
-        All_Commands = (G0_String,M201_String,M3_String)
-        print(All_Commands)
+        All_Commands = (G0_String,M3_String)
+        #print(All_Commands)
         self.Send_Messages(All_Commands)
         
-    def Set_Robot_Position(self,x,y,a, send=False):
+    def Set_Robot_Position(self,x,y,a, Transmission=False):
         self.X_Pos = x
         self.Y_Pos = y
         self.Angle_Deg = a
-        if send :
+        if Transmission :
             command = 'G92 X' + str(round(self.X_Pos)) +' Y'+str(round(self.Y_Pos))+ ' A'+str(round(self.Angle_Deg))+ '\r\n'
-            self.Send_Messages(command)
+            #print(command)
+            self.Send_Message(command)
     
     def Get_Robot_Position(self):
         return self.X_Pos,self.Y_Pos,self.Angle_Deg
 
     def Get_Beacon_Position(self):
         return self.X_Pos,self.Y_Pos,self.Angle_Deg
-    def Disable_Sensor(self):
+    def Disable_All_Sensors(self):
         self.Sensor_Enabled=0;
-    def Enable_Sensor(self):
+    def Enable_All_Sensors(self):
         self.Sensor_Enabled=15;
     def Set_Sensor_State(self,state):
         obstacle_position = []
@@ -211,24 +231,72 @@ class Robot_Class:
         return self.ir_sensors_state
     def Get_Bottle_List(self):
         return self.Bottle_List
-    def Set_Bottle_List(self,x):
-        self.Bottle_List=x
+    def Set_Bottle_List(self,List):
+        self.Bottle_List=List
     def Set_New_Bottles(self, New):
         self.Bottle_List.extend(New)
+        return self.Bottle_List
     def Clear_Bottle_List(self):
         self.Bottle_List=[]
-    def Update_Bottle_List(self):
-        Data=self.Get_Data_TCP()
+    def Clean_Bottle_Of_Position(self, Position):
+        self.Bottle_List=list(filter(lambda x: self.Distance_to_Bottle(x,Position) > 400, self.Bottle_List))
+        return self.Bottle_List
+    def Clean_All_On_Path(self, Start_Position,End_Position,Step_Size=200):
+        X_Start= Start_Position[0]
+        Y_Start= Start_Position[1]
+        X_End=End_Position[0]
+        Y_End= End_Position[1]
+        Error_X=X_End-X_Start;
+        Error_Y=Y_End-Y_Start;
+        Angle_Travel=math.atan2(Error_Y,Error_X)
+        Distance= round(math.sqrt((Error_X) ** 2 + (Error_Y) ** 2))
+        for Point in list(range(0,Distance,Step_Size)):
+            X_Temp=X_Start+math.cos(Angle_Travel)*Point
+            Y_Temp=Y_Start+math.sin(Angle_Travel)*Point
+            self.Clean_Bottle_Of_Position((X_Temp,Y_Temp))
+        self.Clean_Bottle_Of_Position((X_End,Y_End))
+    def Update_Bottle_List(self,Data):
         if Data!=None:
             Data=self.Parse_Data_TCP(Data)
-            self.Set_New_Bottles(Data)
-            print('New Bottles :', len(Data)) 
-            return True
-        return False
-    def Sort_Bottle_List(self):
-        List=self.Get_Bottle_List()
-        List.sort(key=lambda x: self.Ponderation_Bottle(x, self.Get_Robot_Position()))
+            List=self.Set_New_Bottles(Data)
+        else:
+            List=self.Get_Bottle_List()
+        self.Clean_Bottle_Of_Position(self.Get_Robot_Position())
+        self.Set_Bottle_List(self.Sort_Bottle_List(List))
         return List
+    def Sort_Bottle_List(self,List):
+        if List != []:
+            List.sort(key=lambda x: self.Ponderation_Bottle(x, self.Get_Robot_Position()))
+            return List
+        else:
+            return []
+    def Extend_Coordinate(self,Bottle_Position,Distance=800):
+        X,Y,A=self.Get_Robot_Position()
+        X_Bottle, Y_Bottle= Bottle_Position
+        Error_X=X_Bottle-X;
+        Error_Y=Y_Bottle-Y;
+        Angle_Des=math.atan2(Error_Y,Error_X)
+        X_New=X_Bottle+math.cos((Angle_Des))*Distance
+        Y_New=Y_Bottle+math.sin((Angle_Des))*Distance
+        if(self.map.IsAccessible((X_New,Y_New))):
+            return X_New,Y_New, True
+        X_New=X_Bottle+math.cos((Angle_Des))*Distance/2
+        Y_New=Y_Bottle+math.sin((Angle_Des))*Distance/2
+        if(self.map.IsAccessible((X_New,Y_New))):
+            return X_New,Y_New, True
+        return X_Bottle, Y_Bottle, False
+        
+    def Distance_to_Bottle(self,Bottle_Position, Position):
+        X=Position[0]
+        Y =Position[1]
+        Distance=math.sqrt((Bottle_Position[0] - X) ** 2 + (Bottle_Position[1] - Y) ** 2)
+        return Distance
+    def Get_Nearest_Bottle(self):
+        if self.Bottle_List != []:
+            Bottle=self.Bottle_List.pop(0)
+            return Bottle[0],Bottle[1], self.Goal_Score(Bottle, self.Get_Robot_Position())
+        else:
+            return None, None, None
     def Ponderation_Bottle(self,Bottle_Position, Robot_Position):
         X,Y,A=Robot_Position
         Distance=math.sqrt((Bottle_Position[0] - X) ** 2 + (Bottle_Position[1] - Y) ** 2)
@@ -236,6 +304,8 @@ class Robot_Class:
         C=6#Coefficient to favorise distance over angle
         Angle=min((-Error_Angle)%360,Error_Angle%360)
         return Distance +Angle*C
+    def Goal_Score(self,Bottle_Position, Robot_Position):
+        return self.Ponderation_Bottle(Bottle_Position, Robot_Position)
     def Has_reached_final_position(self, Final_Pos):
         #Coordinate must be in mm
         X,Y,_=self.Get_Robot_Position()
@@ -337,7 +407,7 @@ class Map:
             Backward=0
         X_Backward=X+math.cos(math.radians(A-180))*300
         Y_Backward=Y+math.sin(math.radians(A-180))*300
-        print(Space_Around)
+        #print(Space_Around)
         if((not(Space_Around['Front']) or not(Space_Around['FrontRight']) or not(Space_Around['FrontLeft'])) 
            and abs(Error_Angle)<45):
             #Obstacle is in front of the displacement and annoy us
@@ -345,13 +415,13 @@ class Map:
                 X_New=X+math.cos(math.radians(A-90))*300
                 Y_New=Y+math.sin(math.radians(A-90))*300
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance 9__')
+                    #print('Avoidance 9__')
                     return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
             if(Space_Around['FrontLeft'] and Space_Around['Left'] ): #Left is free
                 X_New=X+math.cos(math.radians(A+90))*300
                 Y_New=Y+math.sin(math.radians(A+90))*300
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance A__')
+                    #print('Avoidance A__')
                     return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
             #Full front busy
             if(Space_Around['Right'] ): #Right is free
@@ -360,7 +430,7 @@ class Map:
                 X_New=X+math.cos(math.radians(A-90))*600
                 Y_New=X+math.sin(math.radians(A-90))*600
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance B__')
+                    #print('Avoidance B__')
                     return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
             if(Space_Around['Left'] ): #Right is free
                 X_Backward=X+math.cos(math.radians(A-180))*450
@@ -368,7 +438,7 @@ class Map:
                 X_New=X+math.cos(math.radians(A+90))*600
                 Y_New=Y+math.sin(math.radians(A+90))*600
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance C__')
+                    #print('Avoidance C__')
                     return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
             #No position accessible found
             X_Backward=X+math.cos(math.radians(A-180))*600
@@ -376,25 +446,25 @@ class Map:
             X_New=X_Backward+math.cos(math.radians(A-90))*300
             Y_New=Y_Backward+math.sin(math.radians(A-90))*300
             if(self.IsAccessible((X_New,Y_New))):
-                print('Avoidance D__')
+                #print('Avoidance D__')
                 return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
             X_New=X+math.cos(math.radians(A+90))*300
             Y_New=Y+math.sin(math.radians(A+90))*300
             if(self.IsAccessible((X_New,Y_New))):
-                print('Avoidance E__')
+                #print('Avoidance E__')
                 return X_New,Y_New,0 , True, X_Backward,Y_Backward , 1
         if((not(Space_Around['Right']) or not(Space_Around['Left']) or not(Space_Around['FrontRight']) or not(Space_Around['FrontLeft'])) and abs(Error_Angle)>45 ):
             if(Space_Around['Front'] and Space_Around['FrontRight'] and Space_Around['FrontLeft']):
                 X_New=X+math.cos(math.radians(A))*800
                 Y_New=Y+math.sin(math.radians(A))*800
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance F__')
+                    #print('Avoidance F__')
                     return X_New,Y_New,0 , False, X_New,Y_New , 0
             if(Space_Around['Back']):
                 X_New=X+math.cos(math.radians(A-180))*1100
                 Y_New=Y+math.sin(math.radians(A-180))*1100
                 if(self.IsAccessible((X_New,Y_New))):
-                    print('Avoidance G__')
+                    #print('Avoidance G__')
                     return X_New,Y_New,1 , False, X_New,Y_New , 0
        
         X_New=X
