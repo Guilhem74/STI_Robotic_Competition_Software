@@ -153,10 +153,8 @@ class Robot_Class:
         if(Message is None):
             return False, None
         str2=parse(" M0 H2 T{}\r\n",Message)
-        print('PreParse',Message)
         if(str2 is not None):
             array_argument=np.zeros(1)
-            print('PostParse',str2)
             for i in range(1):
                 array_argument[i]=float(str2[i])
             if array_argument[0]==1:
@@ -201,6 +199,7 @@ class Robot_Class:
                 elif(Output=='Timeout' and self.Has_reached_final_position((X_Des,Y_Des))):
                     break;
                 elif(Output=='Timeout'):
+                    print('Try Again')
                     self.Increment_Nb_Try_Goal()
                 elif(Output=='Arrived'):
                     break;
@@ -300,6 +299,10 @@ class Robot_Class:
         Robot_Pos=self.beacon_main(img)
         print("total time post math: ", time.time() - start)
         return Robot_Pos
+    def Update_Robot_Position_From_Beacon(self):
+        Pos=self.Get_Beacon_Position()
+        self.Set_Robot_Position(Pos[0],Pos[1],Pos[2],Transmission=True)
+        print(Pos[0],Pos[1],Pos[2])
     def Disable_All_Sensors(self):
         self.Sensor_Enabled=0;
     def Enable_All_Sensors(self):
