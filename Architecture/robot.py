@@ -7,6 +7,10 @@ from collections import deque
 from Serial_ import *
 from parse import *
 import TCP_IP as Tcp_Ip
+import cv2 as cv
+import picamera
+from fct import * 
+
 SERIAL_PORT_ROBOT = '/dev/ttyACM0'
 SERIAL_PORT_COllECTOR = '/dev/ttyACM1'
 SERIAL_RATE = 115200
@@ -29,6 +33,11 @@ class Robot_Class:
         self.Sensor_Enabled=15
         self.Robot_Speed=150
         self.Bottle_Collected=0
+        self.camera=picamera.PiCamera()
+        self.camera.resolution = (1080, 720)
+        self.camera.framerate = 60
+        self.camera.shutter_speed = 5000
+        self.stream = io.BytesIO()
         self.ir_sensors_state = {
             'a':0,
             'b':0,
@@ -283,7 +292,21 @@ class Robot_Class:
         return self.X_Pos,self.Y_Pos,self.Angle_Deg
 
     def Get_Beacon_Position(self):
-        return self.X_Pos,self.Y_Pos,self.Angle_Deg
+        start=time.time()
+        for foo in self.camera.capture_continuous(self.stream, format='png', burst=True):
+            # Truncate the stream to the current position (in case
+            # prior iterations output a longer image)
+            self.stream.truncate()
+            self.stream.seek(0)
+            file_bytes = np.asarray(bytearray(self.stream.read()), dtype=np.uint8)
+            img = cv.imdecode(file_bytes, cv.IMREAD_COLOR)
+            print("Time to get image: ", time.time() - start)
+            self.stream.seek(0)
+            break
+        Robot_Pos=self.beacon_main(img)
+        print("total time post amth: ", time.time() - start)
+        print("Beacon",Robot_Pos)
+        return Robot_Pos
     def Disable_All_Sensors(self):
         self.Sensor_Enabled=0;
     def Enable_All_Sensors(self):
@@ -456,6 +479,73 @@ class Robot_Class:
         self.ser_Collector.write(b'G1 R-1500 L-2100\r\n')
     def Stop_Collector(self):
         self.ser_Collector.write(b'G1 R0 L0\r\n')
+    def beacon_main(self,rawImage):
+        boundaries = [
+         ([0, 0, 180], [255, 153, 255], 'r', (0,0,255), (0,8000)),
+         ([230, 141, 0], [255, 225, 255], 'b', (255,0,0), (8000,0)),
+         ([0, 200, 97], [255, 255, 255], 'y', (0,255,255), (0,0)),
+         ([77, 235, 0], [220, 244, 255], 'g', (0,255,0), (8000,8000))
+        ]
+        start = time.time()
+        center_circles = (532, 357)
+        center_beacon = (541,357)
+
+        height,width,depth = rawImage.shape
+        imgWithCircle  = np.zeros((height,width), np.uint8)
+        cv2.circle(imgWithCircle,center_circles,225,(255,255,255),thickness=-1)
+        cv2.circle(imgWithCircle,center_circles,45,(0,0,0),thickness=-1)
+        imask = imgWithCircle>0
+        img1 = np.zeros_like(rawImage, np.uint8)
+        img1[imask] = rawImage[imask]
+        print("First batch circle: ", time.time() - start)
+        start = time.time()
+
+        imgWithCircle  = np.ones((height,width), np.uint8)
+        cv2.circle(imgWithCircle,center_circles,165,(0,0,0),thickness=-1)
+        cv2.circle(imgWithCircle,center_circles,75,(255,255,255),thickness=-1)
+        imask = imgWithCircle>0
+        img = np.zeros_like(img1, np.uint8)
+        img[imask] = img1[imask]
+
+        print("Second batch circle: ", time.time() - start)
+        start = time.time()
+
+        ret,thresh_img = cv2.threshold(img,160,0,cv2.THRESH_TOZERO)
+        print(find_angles(thresh_img,center_beacon,boundaries))
+        angles,lights_coordinates = find_angles(thresh_img,center_beacon,boundaries)
+
+        print("Find angle: ", time.time() - start)
+        start = time.time()
+
+        thresh_img[np.where((thresh_img==[0,0,0]).all(axis=2))] = [160,160,160]
+
+        if len(angles) < 3:
+            print("less than 3 lights found")
+            x, y, a = self.Get_Robot_Position()
+            return float(x), float(y), float(a)
+        if len(angles) == 4:
+            x, y, a = self.Get_Robot_Position()
+            x,y,z = float(x), float(y), float(a)
+            if math.sqrt((x-0)**2 + (y-0)**2) < math.sqrt((x-8000)**2 + (y-8000)**2):
+                a1,a2,a3 = angles[0],angles[1],angles[2]
+                angles = a1,a2,a3
+                l1,l2,l3 = lights_coordinates[0],lights_coordinates[1],lights_coordinates[2]
+                lights_coordinates = l1,l2,l3
+            else:
+                a1,a2,a3 = angles[0],angles[1],angles[3]
+                angles = a1,a2,a3
+                l1,l2,l3 = lights_coordinates[0],lights_coordinates[1],lights_coordinates[3]
+                lights_coordinates = l1,l2,l3
+        xr,yr,ar = find_robot_pos(angles,lights_coordinates)  
+        print("Find robot pos: ", time.time() - start)
+        start = time.time()
+
+        if xr == -1 or yr == -1 or ar == -1:
+            x, y, a = self.Get_Robot_Position()
+            return float(x), float(y), float(a)
+        print("Beacon worked!")
+        return xr,yr,ar
+
 
 
 class Map:
@@ -572,7 +662,4 @@ class Map:
         Y_New=Y
         print('Avoidance H')
         return X_New,Y_New,0 , False , X_Backward,Y_Backward,0 
-
-        
-
 
