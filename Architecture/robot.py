@@ -299,7 +299,7 @@ class Robot_Class:
         print("total time capture image: ", time.time() - start)
         Robot_Pos=self.beacon_main(img)
         print("total time post math: ", time.time() - start)
-        return Robot_Pos[3],img
+        return Robot_Pos
     def Disable_All_Sensors(self):
         self.Sensor_Enabled=0;
     def Enable_All_Sensors(self):
@@ -481,7 +481,7 @@ class Robot_Class:
         ]
         start = time.time()
         center_circles = (532, 357)
-        center_beacon = (541,357)
+        center_beacon = (541,341)
 
         height,width,depth = rawImage.shape
         imgWithCircle  = np.zeros((height,width), np.uint8)
@@ -491,26 +491,25 @@ class Robot_Class:
         cv2.circle(imgWithCircle,center_circles,45,(0,0,0),thickness=-1)
         imask = imgWithCircle>0
         img = np.zeros_like(rawImage, np.uint8)
-        print("First batch circle: ", time.time() - start)
 
         img[imask] = rawImage[imask]
 
-        print("Second batch circle: ", time.time() - start)
+        print(" batch circle: ", time.time() - start)
         start = time.time()
 
         ret,thresh_img = cv2.threshold(img,160,0,cv2.THRESH_TOZERO)
-        print(find_angles(thresh_img,center_beacon,boundaries))
         angles,lights_coordinates = find_angles(thresh_img,center_beacon,boundaries)
+        print(angles,lights_coordinates)
 
         print("Find angle: ", time.time() - start)
         start = time.time()
 
-        thresh_img[np.where((thresh_img==[0,0,0]).all(axis=2))] = [160,160,160]
+        #thresh_img[np.where((thresh_img==[0,0,0]).all(axis=2))] = [160,160,160]
 
         if len(angles) < 3:
             print("less than 3 lights found")
             x, y, a = self.Get_Robot_Position()
-            return float(x), float(y), float(a),img
+            return float(x), float(y), float(a),thresh_img
         if len(angles) == 4:
             x, y, a = self.Get_Robot_Position()
             x,y,z = float(x), float(y), float(a)
@@ -530,9 +529,9 @@ class Robot_Class:
 
         if xr == -1 or yr == -1 or ar == -1:
             x, y, a = self.Get_Robot_Position()
-            return float(x), float(y), float(a)
+            return float(x), float(y), float(a), thresh_img
         print("Beacon worked!")
-        return xr,yr,ar,img
+        return xr,yr,ar,thresh_img
 
 
 
