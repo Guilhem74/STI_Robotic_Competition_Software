@@ -293,20 +293,13 @@ class Robot_Class:
 
     def Get_Beacon_Position(self):
         start=time.time()
-        for foo in self.camera.capture_continuous(self.stream, format='png', burst=True):
-            # Truncate the stream to the current position (in case
-            # prior iterations output a longer image)
-            self.stream.truncate()
-            self.stream.seek(0)
-            file_bytes = np.asarray(bytearray(self.stream.read()), dtype=np.uint8)
-            img = cv.imdecode(file_bytes, cv.IMREAD_COLOR)
-            print("Time to get image: ", time.time() - start)
-            self.stream.seek(0)
-            break
+        self.camera.capture('Image.jpeg', format='jpeg')
+
+        img = cv.imread('Image.jpeg')
+        print("total time capture image: ", time.time() - start)
         Robot_Pos=self.beacon_main(img)
-        print("total time post amth: ", time.time() - start)
-        print("Beacon",Robot_Pos)
-        return Robot_Pos
+        print("total time post math: ", time.time() - start)
+        return Robot_Pos[3],img
     def Disable_All_Sensors(self):
         self.Sensor_Enabled=0;
     def Enable_All_Sensors(self):
@@ -492,20 +485,15 @@ class Robot_Class:
 
         height,width,depth = rawImage.shape
         imgWithCircle  = np.zeros((height,width), np.uint8)
-        cv2.circle(imgWithCircle,center_circles,225,(255,255,255),thickness=-1)
-        cv2.circle(imgWithCircle,center_circles,45,(0,0,0),thickness=-1)
-        imask = imgWithCircle>0
-        img1 = np.zeros_like(rawImage, np.uint8)
-        img1[imask] = rawImage[imask]
-        print("First batch circle: ", time.time() - start)
-        start = time.time()
-
-        imgWithCircle  = np.ones((height,width), np.uint8)
+        cv2.circle(imgWithCircle,center_circles,207,(255,255,255),thickness=-1)
         cv2.circle(imgWithCircle,center_circles,165,(0,0,0),thickness=-1)
         cv2.circle(imgWithCircle,center_circles,75,(255,255,255),thickness=-1)
+        cv2.circle(imgWithCircle,center_circles,45,(0,0,0),thickness=-1)
         imask = imgWithCircle>0
-        img = np.zeros_like(img1, np.uint8)
-        img[imask] = img1[imask]
+        img = np.zeros_like(rawImage, np.uint8)
+        print("First batch circle: ", time.time() - start)
+
+        img[imask] = rawImage[imask]
 
         print("Second batch circle: ", time.time() - start)
         start = time.time()
@@ -522,7 +510,7 @@ class Robot_Class:
         if len(angles) < 3:
             print("less than 3 lights found")
             x, y, a = self.Get_Robot_Position()
-            return float(x), float(y), float(a)
+            return float(x), float(y), float(a),img
         if len(angles) == 4:
             x, y, a = self.Get_Robot_Position()
             x,y,z = float(x), float(y), float(a)
@@ -544,7 +532,7 @@ class Robot_Class:
             x, y, a = self.Get_Robot_Position()
             return float(x), float(y), float(a)
         print("Beacon worked!")
-        return xr,yr,ar
+        return xr,yr,ar,img
 
 
 
