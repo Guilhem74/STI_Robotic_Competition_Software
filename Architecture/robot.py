@@ -494,14 +494,12 @@ class Robot_Class:
 
         img[imask] = rawImage[imask]
 
-        print(" batch circle: ", time.time() - start)
         start = time.time()
 
         ret,thresh_img = cv2.threshold(img,160,0,cv2.THRESH_TOZERO)
         angles,lights_coordinates = find_angles(thresh_img,center_beacon,boundaries)
         print(angles,lights_coordinates)
 
-        print("Find angle: ", time.time() - start)
         start = time.time()
 
         #thresh_img[np.where((thresh_img==[0,0,0]).all(axis=2))] = [160,160,160]
@@ -524,7 +522,6 @@ class Robot_Class:
                 l1,l2,l3 = lights_coordinates[0],lights_coordinates[1],lights_coordinates[3]
                 lights_coordinates = l1,l2,l3
         xr,yr,ar = find_robot_pos(angles,lights_coordinates)  
-        print("Find robot pos: ", time.time() - start)
         start = time.time()
 
         if xr == -1 or yr == -1 or ar == -1:
