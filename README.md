@@ -16,7 +16,7 @@ The other materials can be found at :
   - Low-Level control : https://github.com/Guilhem74/STI_Robotic_Competition_Electronics 
   - CAD Design :https://github.com/Guilhem74/STI_Robotic_Competition_Mechanics
 
-A jupyter notebook represents the list of commands used for the last match of the competition and shouldn't be reused like that.
+A jupyter notebook(Architecture/main.ipynb) represents the list of commands used for the last match of the competition and shouldn't be reused like that.
 
 The class robot (in robot.py) represents most of the architecture and behaviour of the robot, even if it has been designed quickly, and in an not so much object oriented way, it is easily reusable.
 
